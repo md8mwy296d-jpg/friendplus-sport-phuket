@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 120" width="1440" height="120" preserveAspectRatio="none">
+  <!-- Soft organic wave: two layered curves. Use via CSS mask to tint with the color of the previous/next section. -->
+  <path fill="#000" opacity="0.45" d="M0,64 C240,110 480,20 720,44 C960,68 1200,110 1440,60 L1440,120 L0,120 Z"/>
+  <path fill="#000" d="M0,84 C260,120 520,44 760,64 C1000,84 1220,116 1440,80 L1440,120 L0,120 Z"/>
+</svg>

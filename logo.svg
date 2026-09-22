@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- FRIEND+ Sport Phuket logo: monogram F + two crossed padel rackets forming the +, inside a sun/palm circle -->
+  <circle cx="128" cy="128" r="112" fill="none" stroke="#0E8C7F" stroke-width="12"/>
+  <!-- sun -->
+  <circle cx="128" cy="60" r="14" fill="#FFB547"/>
+  <!-- palm arc under sun -->
+  <path d="M96 74 Q128 52 160 74" fill="none" stroke="#0E8C7F" stroke-width="8" stroke-linecap="round"/>
+  <!-- letter F (lagoon) -->
+  <g fill="#0E8C7F">
+    <rect x="74" y="100" width="16" height="72" rx="8"/>
+    <rect x="74" y="100" width="52" height="16" rx="8"/>
+    <rect x="74" y="128" width="42" height="14" rx="7"/>
+  </g>
+  <!-- two padel rackets crossed as a + (coral) -->
+  <g stroke="#FF6B4A" stroke-width="10" stroke-linecap="round" fill="none">
+    <line x1="160" y1="128" x2="160" y2="168"/>
+    <line x1="140" y1="146" x2="180" y2="146"/>
+  </g>
+  <!-- racket heads -->
+  <circle cx="160" cy="116" r="15" fill="#FF6B4A"/>
+  <circle cx="192" cy="146" r="15" fill="#FF6B4A"/>
+  <!-- padel holes -->
+  <g fill="#FBF6EC">
+    <circle cx="155" cy="112" r="2.4"/>
+    <circle cx="165" cy="112" r="2.4"/>
+    <circle cx="160" cy="121" r="2.4"/>
+    <circle cx="187" cy="142" r="2.4"/>
+    <circle cx="197" cy="142" r="2.4"/>
+    <circle cx="192" cy="151" r="2.4"/>
+  </g>
+</svg>
