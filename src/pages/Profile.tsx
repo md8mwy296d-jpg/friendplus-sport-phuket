@@ -12,9 +12,10 @@ import { cn } from '@/lib/utils';
 import SportIcon from '@/components/SportIcon';
 import CountUp from '@/components/home/CountUp';
 import AvatarEditor from '@/components/AvatarEditor';
+import { SPORTS } from '@/lib/sports';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
-const ALL_SPORTS: Sport[] = ['futsal', 'padel', 'dance', 'gym'];
+const ALL_SPORTS = SPORTS;
 const LEVELS: Level[] = ['beginner', 'intermediate', 'advanced'];
 const LANG_CHOICES = ['FR', 'EN', 'RU', 'TH', 'DE', 'ES', 'IT', 'ZH'];
 
@@ -157,7 +158,7 @@ export default function Profile() {
   // ---- stats ----
   const mySessions = useMemo(() => sessions.filter((s) => s.playerIds.includes(currentUser.id)), [sessions, currentUser.id]);
   const activityBySport = useMemo(() => {
-    const counts: Record<Sport, number> = { futsal: 0, padel: 0, dance: 0, gym: 0 };
+    const counts = Object.fromEntries(SPORTS.map((sp) => [sp, 0])) as Record<Sport, number>;
     for (const s of mySessions) counts[s.sport] += 1;
     return counts;
   }, [mySessions]);
@@ -197,7 +198,7 @@ export default function Profile() {
   const STATS = [
     { icon: Trophy, color: 'text-[#0E8C7F] bg-[#0E8C7F]/10', value: currentUser.joinedCount, suffix: '', label: t('profile.stats.played') },
     { icon: CalendarPlus, color: 'text-[#FF6B4A] bg-[#FF6B4A]/10', value: currentUser.organizedCount, suffix: '', label: t('profile.stats.organized') },
-    { icon: Dumbbell, color: 'text-[#5B7CFF] bg-[#5B7CFF]/10', value: currentUser.sports.length, suffix: '/4', label: t('profile.stats.sports') },
+    { icon: Dumbbell, color: 'text-[#5B7CFF] bg-[#5B7CFF]/10', value: currentUser.sports.length, suffix: `/${SPORTS.length}`, label: t('profile.stats.sports') },
     { icon: MailCheck, color: 'text-[#B97A0B] bg-[#FFB547]/15', value: inviteRate, suffix: '%', label: t('profile.stats.inviteRate') },
   ];
 

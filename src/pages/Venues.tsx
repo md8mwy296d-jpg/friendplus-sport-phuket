@@ -13,15 +13,16 @@ import { cn } from '@/lib/utils';
 import SportIcon from '@/components/SportIcon';
 import StatusBadge from '@/components/StatusBadge';
 import EmptyState from '@/components/EmptyState';
+import { SPORTS, hourlyPerPlayer } from '@/lib/sports';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
-const SPORTS: Sport[] = ['futsal', 'padel', 'dance', 'gym'];
 
 const SPORT_CHIP: Record<Sport, string> = {
   futsal: 'bg-[#0E8C7F]/10 text-[#0A6E64]',
   padel: 'bg-[#5B7CFF]/10 text-[#3B5BDB]',
   dance: 'bg-[#FF6B4A]/10 text-[#D14A2B]',
   gym: 'bg-[#FFB547]/15 text-[#B97A0B]',
+  golf: 'bg-[#1E5945]/10 text-[#1E5945]',
 };
 
 type SortMode = 'rating' | 'price' | 'az';
@@ -259,7 +260,8 @@ function VenueModal({ venue, onClose, onToast }: { venue: Venue; onClose: () => 
     [sessions, venue.id],
   );
 
-  const priceFor = (s: Sport) => Math.max(80, venue.priceFrom + (s === 'padel' ? 50 : s === 'futsal' ? 0 : s === 'dance' ? -30 : -20));
+  const { rates } = useStore();
+  const priceFor = (s: Sport) => hourlyPerPlayer(rates, s);
 
   return (
     <motion.div

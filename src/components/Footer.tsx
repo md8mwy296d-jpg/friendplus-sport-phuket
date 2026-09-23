@@ -3,9 +3,8 @@ import { motion } from 'framer-motion';
 import { useI18n, LANGS } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import SportIcon from './SportIcon';
-import type { Sport } from '@/lib/types';
+import { SPORTS } from '@/lib/sports';
 
-const SPORTS: Sport[] = ['futsal', 'padel', 'dance', 'gym'];
 
 export default function Footer() {
   const { t, lang, setLang } = useI18n();

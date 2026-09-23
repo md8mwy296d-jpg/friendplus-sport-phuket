@@ -10,6 +10,7 @@ import { useStore } from '@/lib/store';
 import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import SportIcon from '@/components/SportIcon';
+import { FIXED_QUOTA, SPORTS, durationsFor, hourlyPerPlayer, pricePerPlayer } from '@/lib/sports';
 import PlayerAvatar from '@/components/PlayerAvatar';
 import SessionCard from '@/components/SessionCard';
 import Countdown from '@/components/Countdown';
@@ -32,14 +33,10 @@ interface Draft {
   confirmHours: 24 | 48;
   level: Level | 'all';
   mix: Mix;
-  price: number;
   description: string;
   invitedIds: string[];
   message: string;
 }
-
-const SPORTS: Sport[] = ['futsal', 'padel', 'dance', 'gym'];
-const FIXED_QUOTA: Partial<Record<Sport, number>> = { futsal: 10, padel: 4 };
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const toDateInput = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
@@ -52,7 +49,7 @@ function defaultDraft(): Draft {
     sport: null, venueId: null, title: '',
     date: toDateInput(base), time: toTimeInput(base),
     durationMin: 60, quota: 10, confirmHours: 48,
-    level: 'all', mix: 'mixed', price: 150, description: '',
+    level: 'all', mix: 'mixed', description: '',
     invitedIds: [], message: '',
   };
 }
@@ -124,9 +121,10 @@ function Stepper({ step }: { step: number }) {
 
 function GhostRecap({ draft }: { draft: Draft }) {
   const { t, formatDate, formatTHB } = useI18n();
-  const { getVenue } = useStore();
+  const { getVenue, rates } = useStore();
   const venue = draft.venueId ? getVenue(draft.venueId) : undefined;
   const when = draftToDate(draft);
+  const price = draft.sport ? pricePerPlayer(rates, draft.sport, draft.durationMin, draft.quota) : 0;
   return (
     <div className="overflow-hidden rounded-[20px] border border-[#EADFC8] bg-white shadow-[0_2px_8px_rgba(11,46,43,.06),0_16px_40px_rgba(11,46,43,.08)]">
       <div className="relative aspect-[16/10] overflow-hidden bg-[#FBF6EC]">
@@ -172,7 +170,7 @@ function GhostRecap({ draft }: { draft: Draft }) {
             <span className="font-mono font-bold tabular-nums text-[#0B2E2B]">
               1/{draft.quota} <span className="font-medium text-[#0B2E2B]/50">{t('common.players')}</span>
             </span>
-            <span className="font-mono text-sm font-bold text-[#0B2E2B]">{formatTHB(draft.price)}</span>
+            <span className="font-mono text-sm font-bold text-[#0B2E2B]">{formatTHB(price)}</span>
           </div>
           <div className="flex gap-1">
             {Array.from({ length: draft.quota }).map((_, i) => (
@@ -195,7 +193,7 @@ function GhostRecap({ draft }: { draft: Draft }) {
 /* ------------------------------------ page ------------------------------------ */
 
 export default function CreateSession() {
-  const { venues, users, currentUser, createSession, sendInvitation, getSession } = useStore();
+  const { venues, rates, users, currentUser, createSession, sendInvitation, getSession } = useStore();
   const { t, formatDate, formatTHB } = useI18n();
   const location = useLocation();
   const navState = (location.state ?? {}) as { prefill?: Partial<Draft>; step?: number; fromTitle?: string };
@@ -276,7 +274,9 @@ export default function CreateSession() {
     setDraft((d) => {
       const quota = FIXED_QUOTA[sport] ?? (FIXED_QUOTA[d.sport ?? 'futsal'] ? 12 : d.quota);
       const venueStillOk = d.venueId && venues.find((v) => v.id === d.venueId)?.sports.includes(sport);
-      return { ...d, sport, quota, venueId: venueStillOk ? d.venueId : null };
+      const lengths = durationsFor(sport);
+      const durationMin = lengths.includes(d.durationMin) ? d.durationMin : lengths[0];
+      return { ...d, sport, quota, durationMin, venueId: venueStillOk ? d.venueId : null };
     });
   };
 
@@ -290,7 +290,6 @@ export default function CreateSession() {
       date: when.toISOString(),
       durationMin: draft.durationMin,
       quota: draft.quota,
-      pricePerPerson: draft.price,
       level: draft.level,
       mixed: draft.mix === 'mixed',
       description: draft.description.trim(),
@@ -318,10 +317,8 @@ export default function CreateSession() {
     return true;
   }), [sportVenues, areaFilter, venueQuery]);
 
-  const minPriceFor = (sport: Sport) => {
-    const list = venues.filter((v) => v.sports.includes(sport)).map((v) => v.priceFrom);
-    return list.length ? Math.min(...list) : 0;
-  };
+  // fixed by FRIEND+ (public.sport_rates), never chosen by the organiser
+  const price = draft.sport ? pricePerPlayer(rates, draft.sport, draft.durationMin, draft.quota) : 0;
 
   const candidates = useMemo(() => users
     .filter((u) => u.id !== currentUser.id)
@@ -518,8 +515,8 @@ export default function CreateSession() {
                               {t(`sport.${sport}`)}
                             </span>
                             <span className="mt-1 block text-[13px] text-white/75">
-                              {sport === 'futsal' || sport === 'padel' ? t(`create.sportMeta.${sport}`) : t('create.sportMeta.class')}
-                              {' · '}{t('common.from')} {formatTHB(minPriceFor(sport))}
+                              {FIXED_QUOTA[sport] ? t(`create.sportMeta.${sport}`) : t('create.sportMeta.class')}
+                              {' · '}{formatTHB(hourlyPerPlayer(rates, sport))} {t('create.price.perHour')}
                             </span>
                           </span>
                           <AnimatePresence>
@@ -701,7 +698,7 @@ export default function CreateSession() {
                     <motion.div variants={fieldItem}>
                       <label className="mb-1.5 block text-sm font-semibold text-[#0B2E2B]">{t('create.field.duration')}</label>
                       <div className="flex gap-2">
-                        {[60, 90, 120].map((min) => (
+                        {durationsFor(draft.sport).map((min) => (
                           <button
                             key={min}
                             type="button"
@@ -861,15 +858,13 @@ export default function CreateSession() {
                     <motion.div variants={fieldItem}>
                       <label className="mb-1.5 flex items-center justify-between text-sm font-semibold text-[#0B2E2B]">
                         {t('create.field.price')}
-                        <span className="font-mono text-lg font-bold tabular-nums text-[#0B2E2B]">{formatTHB(draft.price)}</span>
+                        <span className="font-mono text-lg font-bold tabular-nums text-[#0B2E2B]">{formatTHB(price)}</span>
                       </label>
-                      <input
-                        type="range" min={0} max={500} step={10}
-                        value={draft.price}
-                        onChange={(e) => set('price', Number(e.target.value))}
-                        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#EADFC8] accent-[#FF6B4A]"
-                      />
-                      <p className="mt-1 text-xs text-[#0B2E2B]/45">{t('create.price.free')}</p>
+                      <p className="rounded-2xl border border-[#EADFC8] bg-[#FBF6EC] px-4 py-3 text-xs leading-relaxed text-[#0B2E2B]/60">
+                        {draft.sport && rates[draft.sport].per === 'court'
+                          ? t('create.price.court', { amount: formatTHB(rates[draft.sport].amount), players: draft.quota })
+                          : t('create.price.player', { amount: formatTHB(draft.sport ? rates[draft.sport].amount : 0) })}
+                      </p>
                     </motion.div>
 
                     {/* description */}

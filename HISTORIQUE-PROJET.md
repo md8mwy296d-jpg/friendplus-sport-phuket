@@ -25,7 +25,7 @@ Public visé : voyageurs et résidents, d'où les 4 langues (FR, EN, RU, TH).
 | Projet Vercel + domaine `friendplussport.center` | ✅ Projet `friendplus-sport-phuket`, relié à Supabase (vérifié en ligne) |
 | SMTP (e-mails de connexion) | ✅ Resend branché (domaine vérifié, clé « envoi seul », expéditeur `noreply@friendplussport.center`), codes reçus et connexions OK |
 | Photo de profil | ✅ Stockage `avatars` + colonnes `avatar_path` / `avatar_color` (exécuté) |
-| Vraies salles partenaires | ⬜ À saisir (les 6 salles installées sont fictives) |
+| Vraies salles partenaires | ⬜ À saisir (les 7 lieux installés, dont le golf, sont fictifs) |
 
 ### ✅ Corrigé : aucune table n'était lisible (23 septembre 2026, soir)
 
@@ -49,6 +49,24 @@ non connectés. Parcours testé en base (profil, création de session padel, cha
   recadrée en carré 320 px côté navigateur puis envoyée dans le stockage public `avatars/<id joueur>/`.
   À défaut, 8 couleurs au choix, enregistrées en base (avant : dans le navigateur seulement).
   Visible partout où `PlayerAvatar` est utilisé (sessions, Club, invitations).
+
+### ✅ Tarifs fixes et golf (23 septembre 2026, soir)
+
+Les joueurs ne choisissent plus le prix : table **`sport_rates`** (Supabase → Table Editor, modifiable
+sans toucher au code), appliquée par `create_session()` côté serveur (le prix envoyé par l'app est ignoré).
+
+| Sport | Tarif | Par joueur (1 h) |
+|---|---|---|
+| Padel | 2 200 ฿/h **le terrain**, partagé entre les 4 joueurs | 550 ฿ |
+| Futsal | 300 ฿/h par joueur | 300 ฿ |
+| Golf, danse, gym | 120 ฿/h par joueur | 120 ฿ |
+
+Prix d'une session = tarif × durée (÷ 4 pour le padel). Les sessions à venir déjà créées ont été recalculées
+(« PADLE VENDREDI », 1 h 30 : 250 → 825 ฿). Les « à partir de » des salles sont dérivés des tarifs.
+
+**Golf** ajouté partout (contraintes de la base, Club, filtres, profil, accueil) : 4 joueurs, durées 2 h / 3 h / 4 h,
+parcours fictif « Kathu Hills Golf Club » à remplacer, image `public/sport-golf.jpg` = illustration provisoire
+(à remplacer par une vraie photo du golf partenaire).
 
 ### ✅ Rejoindre une session depuis un téléphone (23 septembre 2026, soir)
 
@@ -135,7 +153,7 @@ les 132 fichiers à plat à la racine du dépôt. L'arborescence a été reconst
 
 ### Règles appliquées côté serveur (fonctions RPC, `security definer`)
 
-- `create_session` — quota imposé selon le sport (futsal 10, padel 4), deadline obligatoirement dans le futur, max 10 sessions ouvertes par organisateur, cohérence sport/salle.
+- `create_session` — quota imposé selon le sport (futsal 10, padel 4, golf 4), **prix calculé depuis `sport_rates`**, deadline obligatoirement dans le futur, max 10 sessions ouvertes par organisateur, cohérence sport/salle.
 - `join_session` — verrou `FOR UPDATE` : pas de surbooking même sur clics simultanés. Retourne `joined` | `lastSpot` | `waitlist` | `already`.
 - `leave_session` — promotion automatique du premier de la liste d'attente.
 - `cancel_session` — réservé au créateur.

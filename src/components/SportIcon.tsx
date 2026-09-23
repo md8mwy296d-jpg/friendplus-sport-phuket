@@ -7,7 +7,7 @@ interface SportIconProps {
   strokeWidth?: number;
 }
 
-/** Custom sport icon set (lucide-style stroke icons): futsal ball, padel racket, dance figure, gym dumbbell. */
+/** Custom sport icon set (lucide-style stroke icons): futsal ball, padel racket, golf flag, dance figure, gym dumbbell. */
 export default function SportIcon({ sport, className, strokeWidth = 1.8 }: SportIconProps) {
   const cls = cn('h-5 w-5', className);
   const common = {
@@ -48,6 +48,14 @@ export default function SportIcon({ sport, className, strokeWidth = 1.8 }: Sport
           <path d="M13 7 C14.5 10 14 13 12.5 15.5 L10 20" />
           <path d="M13 7 C15.5 8.5 18 8.5 20 7" />
           <path d="M12.5 15.5 C14.5 17 16.5 18 19 18.5" />
+        </svg>
+      );
+    case 'golf':
+      return (
+        <svg {...common}>
+          <path d="M9 20 V3 L17 6.5 L9 10" />
+          <ellipse cx="9" cy="20" rx="6" ry="1.5" />
+          <circle cx="17.5" cy="17" r="1.8" />
         </svg>
       );
     case 'gym':

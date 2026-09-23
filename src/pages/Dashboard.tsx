@@ -419,7 +419,6 @@ export default function Dashboard() {
           confirmHours: hoursBefore >= 36 ? 48 : 24,
           level: s.level,
           mix: s.mixed ? 'mixed' : 'mixed',
-          price: s.pricePerPerson,
           description: s.description,
         },
       },
