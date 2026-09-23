@@ -25,6 +25,13 @@ create table if not exists public.profiles (
   created_at    timestamptz not null default now()
 );
 
+-- Avatar : photo (chemin dans le stockage « avatars », toujours dans le dossier du joueur)
+-- ou, à défaut, une couleur choisie parmi les 8 dégradés de l'app.
+alter table public.profiles add column if not exists avatar_path text
+  check (avatar_path is null or (char_length(avatar_path) <= 200 and avatar_path like id::text || '/%'));
+alter table public.profiles add column if not exists avatar_color smallint
+  check (avatar_color is null or avatar_color between 0 and 7);
+
 -- Salles partenaires (gérées par toi depuis le tableau Supabase)
 create table if not exists public.venues (
   id          text primary key,
@@ -91,7 +98,8 @@ select p.id, p.name, p.nationality, p.country_code, p.lang, p.sports, p.level,
        p.rating, p.bio, p.onboarded, p.created_at,
        (select count(*) from public.session_players sp
           where sp.user_id = p.id and sp.kind = 'player')::int as joined_count,
-       (select count(*) from public.sessions s where s.creator_id = p.id)::int as organized_count
+       (select count(*) from public.sessions s where s.creator_id = p.id)::int as organized_count,
+       p.avatar_path, p.avatar_color
 from public.profiles p;
 
 -- ---------------------------------------------------------------------
@@ -133,7 +141,7 @@ create policy "je modifie mon profil" on public.profiles for update
 
 -- Un joueur ne peut pas modifier sa propre note
 revoke update on public.profiles from anon, authenticated;
-grant update (name, nationality, country_code, lang, sports, level, bio, onboarded)
+grant update (name, nationality, country_code, lang, sports, level, bio, onboarded, avatar_path, avatar_color)
   on public.profiles to authenticated;
 
 drop policy if exists "salles lisibles" on public.venues;
@@ -387,3 +395,25 @@ begin
 exception when others then
   raise notice 'pg_cron non activé : active-le puis relance uniquement cette section.';
 end $$;
+
+-- ---------------------------------------------------------------------
+-- 8. Photos de profil : espace de stockage public « avatars » (2 Mo max)
+--    Chaque joueur n'écrit que dans son dossier « <son id>/ ».
+-- ---------------------------------------------------------------------
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 2097152, array['image/jpeg','image/png','image/webp'])
+on conflict (id) do update
+  set public = true, file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "je vois mes avatars" on storage.objects;
+create policy "je vois mes avatars" on storage.objects for select to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "j'envoie mon avatar" on storage.objects;
+create policy "j'envoie mon avatar" on storage.objects for insert to authenticated
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "je supprime mon avatar" on storage.objects;
+create policy "je supprime mon avatar" on storage.objects for delete to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);

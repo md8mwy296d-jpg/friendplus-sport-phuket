@@ -5,7 +5,7 @@ const d = (days: number) => h(days * 24);
 
 export const CURRENT_USER_ID = 'u-alex';
 
-export const SEED_USERS: User[] = [
+export const SEED_USERS: User[] = ([
   { id: 'u-alex', name: 'Alex Martin', nationality: '🇫🇷', countryCode: 'FR', lang: 'fr', sports: ['futsal', 'padel'], level: 'intermediate', rating: 4.6, bio: 'Touriste français à Phuket pour 3 semaines, toujours partant pour un 5v5.', joinedCount: 7, organizedCount: 2 },
   { id: 'u-nok', name: 'Nok Srisai', nationality: '🇹🇭', countryCode: 'TH', lang: 'th', sports: ['dance', 'gym'], level: 'advanced', rating: 4.9, bio: 'Local de Phuket Town, danseuse et fan de fitness collectif.', joinedCount: 18, organizedCount: 5 },
   { id: 'u-anastasia', name: 'Anastasia Volkova', nationality: '🇷🇺', countryCode: 'RU', lang: 'ru', sports: ['padel', 'gym'], level: 'intermediate', rating: 4.7, bio: 'Padel addict, à Kata pour la saison.', joinedCount: 11, organizedCount: 1 },
@@ -20,7 +20,7 @@ export const SEED_USERS: User[] = [
   { id: 'u-lucas', name: 'Lucas Silva', nationality: '🇧🇷', countryCode: 'BR', lang: 'en', sports: ['futsal'], level: 'advanced', rating: 4.9, bio: 'Brésilien, le futsal dans le sang.', joinedCount: 31, organizedCount: 6 },
   { id: 'u-minjun', name: 'Min-jun Park', nationality: '🇰🇷', countryCode: 'KR', lang: 'en', sports: ['padel', 'futsal'], level: 'intermediate', rating: 4.5, bio: 'Voyageur solo, toujours partant.', joinedCount: 8, organizedCount: 0 },
   { id: 'u-femke', name: 'Femke van Dijk', nationality: '🇳🇱', countryCode: 'NL', lang: 'en', sports: ['gym', 'dance'], level: 'intermediate', rating: 4.4, bio: 'Coach fitness, à Bang Tao pour 2 mois.', joinedCount: 12, organizedCount: 3 },
-];
+] as Omit<User, 'avatarUrl' | 'avatarColor'>[]).map((u) => ({ ...u, avatarUrl: '', avatarColor: null }));
 
 export const SEED_VENUES: Venue[] = [
   { id: 'v-patong', name: 'Patong Sports Arena', area: 'Patong', sports: ['futsal', 'padel'], address: 'Rat-U-Thit 200 Pee Rd, Patong', rating: 4.7, priceFrom: 150, photo: '/venue-patong.jpg', amenities: ['Vestiaires', 'Douches', 'Parking', 'Bar'], hours: '08:00 – 23:00' },

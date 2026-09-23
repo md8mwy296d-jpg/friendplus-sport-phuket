@@ -31,6 +31,7 @@ export interface ProfilePatch {
   level?: Level;
   bio?: string;
   onboarded?: boolean;
+  avatarColor?: number | null;
 }
 
 export interface StoreContextValue {
@@ -62,6 +63,9 @@ export interface StoreContextValue {
   sendInvitation: (sessionId: string, toUserId: string, message?: string) => void;
   respondInvitation: (invitationId: string, accept: boolean) => void;
   updateProfile: (patch: ProfilePatch) => Promise<boolean>;
+  /** Resizes the picture, stores it and makes it the profile photo. */
+  uploadAvatar: (file: File) => Promise<boolean>;
+  removeAvatar: () => Promise<boolean>;
   signOut: () => Promise<void>;
   /** Legacy name used by the UI: now signs the user out. */
   resetDemo: () => void;
@@ -81,6 +85,25 @@ export function useStore(): StoreContextValue {
 let idCounter = 0;
 const uid = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${(idCounter++).toString(36)}`;
 
+const AVATAR_BUCKET = 'avatars';
+const AVATAR_SIZE = 320;
+
+/** Square-crops and downsizes a picture so phone photos upload fast and stay small. */
+async function resizeAvatar(file: File): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const side = Math.min(bitmap.width, bitmap.height);
+  const canvas = document.createElement('canvas');
+  canvas.width = AVATAR_SIZE;
+  canvas.height = AVATAR_SIZE;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('canvas_unavailable');
+  ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+  bitmap.close();
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('encode_failed'))), 'image/jpeg', 0.86);
+  });
+}
+
 /* ------------------------------ row mappers ------------------------------ */
 
 type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -98,6 +121,8 @@ function toUser(r: Row): User {
     bio: r.bio || '',
     joinedCount: r.joined_count ?? 0,
     organizedCount: r.organized_count ?? 0,
+    avatarUrl: r.avatar_path ? supabase.storage.from(AVATAR_BUCKET).getPublicUrl(r.avatar_path).data.publicUrl : '',
+    avatarColor: r.avatar_color ?? null,
   };
 }
 
@@ -164,6 +189,8 @@ const GUEST: User = {
   bio: '',
   joinedCount: 0,
   organizedCount: 0,
+  avatarUrl: '',
+  avatarColor: null,
 };
 
 const KNOWN_ERRORS = [
@@ -461,11 +488,49 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (patch.level !== undefined) row.level = patch.level;
     if (patch.bio !== undefined) row.bio = patch.bio.slice(0, 140);
     if (patch.onboarded !== undefined) row.onboarded = patch.onboarded;
+    if (patch.avatarColor !== undefined) row.avatar_color = patch.avatarColor;
     const { error } = await supabase.from('profiles').update(row).eq('id', myId);
     if (error) { pushError(error); return false; }
     await load();
     return true;
   }, [myId, load, pushError]);
+
+  const currentAvatarPath = useCallback(async (): Promise<string | null> => {
+    const { data } = await supabase.from('profiles').select('avatar_path').eq('id', myId).maybeSingle();
+    return (data?.avatar_path as string | null) ?? null;
+  }, [myId]);
+
+  const uploadAvatar = useCallback(async (file: File): Promise<boolean> => {
+    if (!myId) return false;
+    try {
+      const blob = await resizeAvatar(file);
+      const previous = await currentAvatarPath();
+      const path = `${myId}/${Date.now().toString(36)}.jpg`;
+      const up = await supabase.storage.from(AVATAR_BUCKET).upload(path, blob, { contentType: 'image/jpeg', cacheControl: '31536000' });
+      if (up.error) throw up.error;
+      const { error } = await supabase.from('profiles').update({ avatar_path: path }).eq('id', myId);
+      if (error) {
+        await supabase.storage.from(AVATAR_BUCKET).remove([path]);
+        throw error;
+      }
+      if (previous) await supabase.storage.from(AVATAR_BUCKET).remove([previous]);
+      await load();
+      return true;
+    } catch (err) {
+      pushError(err);
+      return false;
+    }
+  }, [myId, currentAvatarPath, load, pushError]);
+
+  const removeAvatar = useCallback(async (): Promise<boolean> => {
+    if (!myId) return false;
+    const previous = await currentAvatarPath();
+    const { error } = await supabase.from('profiles').update({ avatar_path: null }).eq('id', myId);
+    if (error) { pushError(error); return false; }
+    if (previous) await supabase.storage.from(AVATAR_BUCKET).remove([previous]);
+    await load();
+    return true;
+  }, [myId, currentAvatarPath, load, pushError]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
@@ -514,6 +579,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       sendInvitation,
       respondInvitation,
       updateProfile,
+      uploadAvatar,
+      removeAvatar,
       signOut,
       resetDemo,
       dismissToast,
@@ -522,7 +589,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [users, myId, lang, venues, sessions, invitations, me, toasts, authReady, dataReady, auth,
     joinSession, leaveSession, cancelSession, createSession, sendInvitation, respondInvitation,
-    updateProfile, signOut, resetDemo, dismissToast, pushToast, load]);
+    updateProfile, uploadAvatar, removeAvatar, signOut, resetDemo, dismissToast, pushToast, load]);
 
   return createElement(StoreContext.Provider, { value }, children);
 }
