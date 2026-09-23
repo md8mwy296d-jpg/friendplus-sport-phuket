@@ -4,12 +4,14 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Globe, Menu, X, ChevronDown, User, Mail, LogOut } from 'lucide-react';
 import { useI18n, LANGS } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
+import { useClub } from '@/lib/club';
 import type { Lang } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import PlayerAvatar from './PlayerAvatar';
 
 const NAV_LINKS = [
   { to: '/explorer', key: 'nav.explore' },
+  { to: '/club', key: 'nav.club' },
   { to: '/creer', key: 'nav.create' },
   { to: '/salles', key: 'nav.venues' },
   { to: '/mes-sessions', key: 'nav.mySessions' },
@@ -184,6 +186,7 @@ function AvatarMenu({ dark = false }: { dark?: boolean }) {
 export default function Navbar() {
   const { t } = useI18n();
   const { isAuthenticated } = useStore();
+  const { unreadTotal } = useClub();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [drawer, setDrawer] = useState(false);
@@ -234,6 +237,11 @@ export default function Navbar() {
               {({ isActive }) => (
                 <>
                   {t(link.key)}
+                  {link.to === '/club' && unreadTotal > 0 && (
+                    <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF6B4A] px-1.5 align-middle text-[10px] font-bold text-white">
+                      {unreadTotal > 99 ? '99+' : unreadTotal}
+                    </span>
+                  )}
                   <span
                     className={cn(
                       'absolute inset-x-3.5 -bottom-0.5 h-0.5 origin-left rounded-full bg-[linear-gradient(90deg,#0E8C7F,#2FBFA5,#FFB547,#FF6B4A)] transition-transform duration-300',

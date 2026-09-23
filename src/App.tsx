@@ -16,6 +16,8 @@ const Venues = lazy(() => import('./pages/Venues'))
 const Profile = lazy(() => import('./pages/Profile'))
 const Login = lazy(() => import('./pages/Login'))
 const Onboarding = lazy(() => import('./pages/Onboarding'))
+const Club = lazy(() => import('./pages/Club'))
+const Conversation = lazy(() => import('./pages/Conversation'))
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -46,6 +48,8 @@ export default function App() {
         <Route path="creer" element={<RequireAuth><CreateSession /></RequireAuth>} />
         <Route path="mes-sessions" element={<RequireAuth><Dashboard /></RequireAuth>} />
         <Route path="salles" element={<Venues />} />
+        <Route path="club" element={<RequireAuth><Club /></RequireAuth>} />
+        <Route path="club/:id" element={<RequireAuth><Conversation /></RequireAuth>} />
         <Route path="profil" element={<RequireAuth><Profile /></RequireAuth>} />
         <Route path="connexion" element={<Login />} />
         <Route path="bienvenue" element={<Onboarding />} />

@@ -1,7 +1,7 @@
 # FRIEND+ Sport Phuket — historique et état du projet
 
 > Fichier de reprise. À ouvrir en premier dans Claude Code (`claude` puis « lis HISTORIQUE-PROJET.md »).
-> Dernière mise à jour : 23 septembre 2026.
+> Dernière mise à jour : 23 septembre 2026 (Social Club + app mobile).
 
 ---
 
@@ -18,10 +18,12 @@ Public visé : voyageurs et résidents, d'où les 4 langues (FR, EN, RU, TH).
 | Élément | État |
 |---|---|
 | Code de l'application (v1 production) | ✅ Terminé, dans le dépôt |
-| Base de données Supabase (`supabase/schema.sql`) | ⬜ À exécuter dans Supabase |
+| Base de données Supabase (`supabase/schema.sql`) | ✅ Exécutée |
+| Social Club (`supabase/club.sql`) | ⬜ À exécuter dans Supabase après fusion |
+| Application mobile (PWA) | ✅ Dans le code, active dès le déploiement |
 | Dépôt GitHub `friendplus-sport-phuket` | ✅ Arborescence reconstruite (branche `claude/reprise-projet-5kelx0`), build OK |
-| Projet Vercel + domaine `friendplussport.center` | ⚠️ Domaine configuré, déploiement en échec |
-| SMTP (e-mails de connexion) | ⬜ À brancher (Resend) |
+| Projet Vercel + domaine `friendplussport.center` | ✅ Déploiement vert, variables Supabase en place |
+| SMTP (e-mails de connexion) | 🔄 En cours : compte Resend, DNS du domaine à ajouter |
 | Vraies salles partenaires | ⬜ À saisir (les 6 salles installées sont fictives) |
 
 ### ✅ Blocage résolu (23 septembre 2026)
@@ -45,6 +47,11 @@ les 132 fichiers à plat à la racine du dépôt. L'arborescence a été reconst
 
 ---
 
+5. **Social Club + app mobile** (23 septembre 2026) : groupes publics/privés créés par les membres, messages privés,
+   discussion automatique par session, photos (stockage privé), modération (blocage, signalement, exclusion,
+   admins du site). App mobile en PWA (installable, barre d'onglets) plutôt qu'appli native dans un premier temps :
+   pas de stores ni de frais, les touristes l'installent en 10 secondes ; Capacitor plus tard si besoin.
+
 ## 4. Architecture
 
 **Front** : React 19, TypeScript, Vite, Tailwind, shadcn/ui, framer-motion, GSAP, Lenis.
@@ -63,6 +70,10 @@ les 132 fichiers à plat à la racine du dépôt. L'arborescence a été reconst
 | `src/lib/countries.ts` | Liste des nationalités proposées |
 | `src/pages/` | Home, Explore, CreateSession, SessionDetail, Dashboard, Venues, Profile, Login, Onboarding |
 | `src/components/RequireAuth.tsx` | Garde les pages réservées aux membres |
+| `supabase/club.sql` | Social Club : tables, sécurité, fonctions, stockage des photos |
+| `src/lib/club.ts` | Pont Club ↔ Supabase : discussions, non-lus, temps réel, envoi de photos |
+| `src/pages/Club.tsx`, `src/pages/Conversation.tsx` | Liste des discussions / découverte des groupes, écran de discussion |
+| `src/components/mobile/` | Barre d'onglets mobile, bannière « Installer l'app » |
 | `DEPLOIEMENT.md` | Guide de mise en ligne pas à pas |
 
 ### Modèle de données
