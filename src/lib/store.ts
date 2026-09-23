@@ -66,6 +66,7 @@ export interface StoreContextValue {
   /** Legacy name used by the UI: now signs the user out. */
   resetDemo: () => void;
   dismissToast: (id: string) => void;
+  pushToast: (toast: Omit<ToastItem, 'id'>) => void;
   refresh: () => Promise<void>;
 }
 
@@ -516,11 +517,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       signOut,
       resetDemo,
       dismissToast,
+      pushToast,
       refresh: load,
     };
   }, [users, myId, lang, venues, sessions, invitations, me, toasts, authReady, dataReady, auth,
     joinSession, leaveSession, cancelSession, createSession, sendInvitation, respondInvitation,
-    updateProfile, signOut, resetDemo, dismissToast, load]);
+    updateProfile, signOut, resetDemo, dismissToast, pushToast, load]);
 
   return createElement(StoreContext.Provider, { value }, children);
 }

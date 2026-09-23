@@ -73,7 +73,7 @@ function ToastCard({ toast }: { toast: ToastItem }) {
 export default function Toasts() {
   const { toasts } = useStore();
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-[100] flex flex-col items-end gap-2">
+    <div className="pointer-events-none fixed bottom-[calc(76px+env(safe-area-inset-bottom))] right-4 z-[100] lg:bottom-4 flex flex-col items-end gap-2">
       <AnimatePresence>
         {toasts.map((toast) => (
           <ToastCard key={toast.id} toast={toast} />

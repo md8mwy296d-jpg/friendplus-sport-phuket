@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'framer-motion';
 import {
   Calendar,
@@ -11,12 +11,14 @@ import {
   LogOut,
   Mail,
   MapPin,
+  MessageCircle,
   Share2,
   Star,
   X,
 } from 'lucide-react';
 import type { Session } from '@/lib/types';
 import { useStore } from '@/lib/store';
+import { useClub } from '@/lib/club';
 import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import StatusBadge from '@/components/StatusBadge';
@@ -63,7 +65,10 @@ export default function SessionDetail() {
   const { getSession, getVenue, getUser, sessions, invitations, currentUser, joinSession, leaveSession, ready } =
     useStore();
   const { t, formatDate, formatTHB } = useI18n();
+  const club = useClub();
+  const navigate = useNavigate();
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [openingChat, setOpeningChat] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const session = getSession(id ?? '');
@@ -104,6 +109,17 @@ export default function SessionDetail() {
   const active = session.status === 'open' || session.status === 'full';
   const meIn = session.playerIds.includes(currentUser.id);
   const meWaitlisted = session.waitlistIds.includes(currentUser.id);
+  const canChat = club.enabled && (meIn || meWaitlisted || session.creatorId === currentUser.id);
+  const openChat = async () => {
+    setOpeningChat(true);
+    const conv = await club.openSessionChat(session.id);
+    setOpeningChat(false);
+    if (conv) navigate(`/club/${conv}`);
+  };
+  const messagePlayer = async (userId: string) => {
+    const conv = await club.startDirect(userId);
+    if (conv) navigate(`/club/${conv}`);
+  };
   const hoursBefore = Math.round(
     (new Date(session.date).getTime() - new Date(session.confirmationDeadline).getTime()) / 3_600_000,
   );
@@ -450,6 +466,15 @@ export default function SessionDetail() {
                         {u.name.split(' ')[0]} <span aria-hidden>{u.nationality}</span>
                       </p>
                       <p className="text-[11px] text-[#0B2E2B]/50">{t(`common.level.${u.level}`)}</p>
+                      {club.enabled && u.id !== currentUser.id && (
+                        <button
+                          type="button"
+                          onClick={() => void messagePlayer(u.id)}
+                          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold text-[#0A6E64] hover:bg-[#0E8C7F]/10"
+                        >
+                          <MessageCircle className="h-3 w-3" /> {t('club.messagePlayer')}
+                        </button>
+                      )}
                       <div className="flex flex-wrap justify-center gap-1">
                         {u.id === session.creatorId && (
                           <span className="rounded-full bg-[#0E8C7F]/10 px-2 py-0.5 text-[10px] font-bold text-[#0A6E64]">
@@ -656,6 +681,17 @@ export default function SessionDetail() {
                   className="h-14 rounded-full bg-golden-hour text-sm font-bold text-white shadow-coral transition-transform hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {t('detail.action.join')}
+                </button>
+              )}
+
+              {canChat && (
+                <button
+                  onClick={() => void openChat()}
+                  disabled={openingChat}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#0B2E2B] text-sm font-bold text-white transition-colors hover:bg-[#1E5945] disabled:opacity-60"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  {t('club.sessionChat')}
                 </button>
               )}
 

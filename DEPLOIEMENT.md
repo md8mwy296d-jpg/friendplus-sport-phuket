@@ -23,7 +23,11 @@ Les trois services ont une offre gratuite suffisante pour lancer.
    Tu dois voir « Success ». Les tables apparaissent dans **Table Editor**.
 4. **Authentication → Sign In / Providers → Email** : vérifie que c'est activé.
    Laisse les autres réglages par défaut.
-5. **Authentication → Emails → Templates → Magic Link** : remplace le contenu par :
+   Puis, dans une **nouvelle requête**, colle `supabase/club.sql` (Social Club : groupes, messages, photos) et **Run**.
+   Il crée aussi l'espace de stockage privé `chat-images` pour les photos.
+5. **Authentication → Emails → Templates** : les modèles ne sont modifiables qu'**après** avoir branché le SMTP
+   (point 6). Fais donc le point 6 d'abord, puis remplace le contenu de **« Magic link or OTP »** ET de
+   **« Confirm sign up »** (reçu à la toute première connexion) par :
 
    ```html
    <h2>Ton code FRIEND+</h2>
@@ -94,6 +98,10 @@ Fais le test avec 2 ou 3 téléphones (ou navigateurs en navigation privée) :
   mets `active` à `false`. Pour une photo, mets une adresse d'image (https://…) dans `photo`.
 - **Sessions et joueurs** : tables `sessions`, `session_players`, `profiles`.
 - **Supprimer un compte** (demande RGPD/PDPA) : **Authentication → Users → Delete user**. Ses données partent avec.
+- **Devenir modérateur du Social Club** : copie ton identifiant dans **Authentication → Users** (colonne UID), puis
+  SQL Editor : `insert into public.app_admins (user_id) values ('TON-UID');`. Tu peux alors supprimer n'importe quel
+  message et exclure un membre de n'importe quel groupe.
+- **Signalements** : **Table Editor → reports** (message signalé, auteur, motif). Passe `status` à `reviewed` une fois traité.
 
 ## Ce que fait cette version 1
 
@@ -104,6 +112,11 @@ Fais le test avec 2 ou 3 téléphones (ou navigateurs en navigation privée) :
 - Confirmation ou annulation automatique à la deadline 24/48 h (toutes les 5 min)
 - Invitations entre joueurs, annulation par l'organisateur
 - Chiffres de la page d'accueil calculés en direct
+- **Social Club** : groupes publics ou privés créés par les membres, messages privés, discussion automatique de chaque
+  session (réservée aux inscrits), photos, messages en direct, compteur de non-lus
+- **Modération** : blocage d'un joueur, signalement, suppression de messages, exclusion d'un groupe, limite de 20 messages/minute
+- **Application mobile (PWA)** : installable sur l'écran d'accueil (Android : bouton « Installer » ; iPhone : Partager →
+  « Sur l'écran d'accueil »), plein écran, barre d'onglets en bas, fonctionne hors connexion pour l'interface
 
 ## Prochaines étapes conseillées
 
@@ -111,5 +124,5 @@ Fais le test avec 2 ou 3 téléphones (ou navigateurs en navigation privée) :
    Aujourd'hui, le joueur le voit en ouvrant l'app.
 2. **Mentions légales, CGU et politique de confidentialité** (RGPD si tu vises des Européens, PDPA en Thaïlande).
 3. **Paiement** à l'inscription (Stripe ou Omise, qui gère PromptPay en Thaïlande) pour réduire les absences.
-4. **Signalement** d'un joueur et modération.
-5. **Installation sur téléphone** (PWA) : icône sur l'écran d'accueil sans passer par les stores.
+4. **Notifications push** sur téléphone pour les nouveaux messages du Club (nécessite une fonction serveur Supabase).
+5. **Publication sur l'App Store et Google Play** (Capacitor) une fois la PWA adoptée.
