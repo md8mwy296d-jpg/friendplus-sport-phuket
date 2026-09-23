@@ -22,7 +22,7 @@ Public visé : voyageurs et résidents, d'où les 4 langues (FR, EN, RU, TH).
 | Social Club (`supabase/club.sql`) | ✅ Exécuté (tables, fonctions, stockage photos, 1 admin) |
 | Application mobile (PWA) | ✅ Dans le code, active dès le déploiement |
 | Dépôt GitHub `friendplus-sport-phuket` | ✅ Arborescence reconstruite (branche `claude/reprise-projet-5kelx0`), build OK |
-| Projet Vercel + domaine `friendplussport.center` | ⚠️ Site en ligne, mais compilé **sans** les clés Supabase (voir ci-dessous) |
+| Projet Vercel + domaine `friendplussport.center` | ✅ Projet `friendplus-sport-phuket`, relié à Supabase (vérifié en ligne) |
 | SMTP (e-mails de connexion) | 🔄 Domaine créé dans Resend (Tokyo), 3 enregistrements DNS à ajouter, puis SMTP à brancher dans Supabase |
 | Vraies salles partenaires | ⬜ À saisir (les 6 salles installées sont fictives) |
 
@@ -35,16 +35,19 @@ explicites dans `schema.sql` et `club.sql`, appliqués à la base. Au passage, f
 internes (`handle_new_user`, `is_app_admin`, `is_conversation_member`, `_chat_image_readable`) aux visiteurs
 non connectés. Parcours testé en base (profil, création de session padel, chat de session, message) : OK.
 
-### ⚠️ Site en ligne sans clés Supabase
+### ✅ Corrigé : site en ligne sans clés Supabase
 
-Le code servi sur `www.friendplussport.center` contient `missing-project.supabase.co` : il a été compilé
-sans `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. Vite intègre ces valeurs **au moment de la compilation** :
-après avoir ajouté ou modifié une variable dans Vercel, il faut **redéployer**. Attention, il existe deux
-projets Vercel (`friendplus-sport-phuket` et `friendplus-sport-phuket-wsst`) : vérifier lequel porte le
-domaine, y mettre les variables, et supprimer l'autre.
+Les variables Vercel avaient été saisies en minuscules (`vite_supabase_url`…). Vite ne lit que les noms
+en majuscules préfixés `VITE_` : le site était compilé avec l'adresse de secours `missing-project.supabase.co`.
+Ajout de `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` (type « plain », la clé anon est publique par
+conception) puis redéploiement. Vérifié : le code servi sur `www.friendplussport.center` pointe vers
+`fqrlyykadbzaxzjneupm.supabase.co` et l'API renvoie bien les salles.
 
-Valeurs à utiliser : URL `https://fqrlyykadbzaxzjneupm.supabase.co`, clé = « anon / publishable » de
-Supabase → Project Settings → API.
+- **Projet Vercel de production : `friendplus-sport-phuket`** (porte le domaine).
+- `friendplus-sport-phuket-wsst` était un test : il peut être supprimé dans Vercel (Settings → Delete).
+- Les anciennes variables en minuscules sont inutiles et peuvent être supprimées (Vercel refuse de
+  renommer une variable « sensitive »).
+- Rappel : Vite intègre les variables **à la compilation**. Toute modification exige un redéploiement.
 
 ### ✅ Blocage résolu (23 septembre 2026)
 
@@ -126,7 +129,7 @@ RLS active partout. Lecture publique pour `venues`, `sessions`, `session_players
 
 1. ~~Réparer le dépôt GitHub~~ ✅
 2. ~~Exécuter `schema.sql` et `club.sql`~~ ✅ (pg_cron actif, tâche toutes les 5 min)
-3. **Variables d'environnement Vercel** puis **redéployer** (voir section 2) : `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` (`VITE_ENABLE_GOOGLE` est facultatif).
+3. ~~Variables d'environnement Vercel~~ ✅ (noms en majuscules, voir section 2) : `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` (`VITE_ENABLE_GOOGLE` est facultatif).
 4. **Supabase → Authentication → URL Configuration** : Site URL `https://www.friendplussport.center`, Redirect URLs `https://www.friendplussport.center/**`.
 5. **Modèle d'e-mail Magic Link** : ajouter `{{ .Token }}` pour que le code à 6 chiffres apparaisse, sinon les joueurs ne reçoivent qu'un lien.
 6. **SMTP Resend** : obligatoire, l'envoi intégré de Supabase est limité à quelques e-mails par heure.
