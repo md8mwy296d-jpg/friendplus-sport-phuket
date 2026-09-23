@@ -1,19 +1,21 @@
-import { useEffect } from 'react'
+import { lazy, useEffect } from 'react'
 import { Routes, Route } from 'react-router'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 import Layout from './components/Layout'
 import Home from './pages/Home'
-import Explore from './pages/Explore'
-import SessionDetail from './pages/SessionDetail'
-import CreateSession from './pages/CreateSession'
-import Dashboard from './pages/Dashboard'
-import Venues from './pages/Venues'
-import Profile from './pages/Profile'
-import Login from './pages/Login'
-import Onboarding from './pages/Onboarding'
 import RequireAuth from './components/RequireAuth'
+
+// L'accueil reste dans le bundle principal ; les autres pages sont chargées à la demande.
+const Explore = lazy(() => import('./pages/Explore'))
+const SessionDetail = lazy(() => import('./pages/SessionDetail'))
+const CreateSession = lazy(() => import('./pages/CreateSession'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Venues = lazy(() => import('./pages/Venues'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Login = lazy(() => import('./pages/Login'))
+const Onboarding = lazy(() => import('./pages/Onboarding'))
 
 gsap.registerPlugin(ScrollTrigger)
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface QuotaRingProps {
@@ -38,7 +38,7 @@ export default function QuotaRing({ current, quota, size = 96, strokeWidth = 8, 
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const pct = quota > 0 ? display / quota : 0;
-  const gradientId = useRef(`quota-grad-${Math.random().toString(36).slice(2, 8)}`).current;
+  const gradientId = `quota-grad-${useId()}`;
 
   return (
     <div className={cn('relative inline-flex items-center justify-center', className)} style={{ width: size, height: size }}>
