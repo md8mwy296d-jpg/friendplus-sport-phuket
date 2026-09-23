@@ -16,7 +16,7 @@ create table if not exists public.conversations (
   kind             text not null check (kind in ('group','direct','session')),
   name             text not null default '' check (char_length(name) <= 60),
   description      text not null default '' check (char_length(description) <= 300),
-  sport            text check (sport is null or sport in ('futsal','padel','dance','gym')),
+  sport            text check (sport is null or sport in ('futsal','padel','golf','dance','gym')),
   is_private       boolean not null default false,
   session_id       uuid unique references public.sessions(id) on delete cascade,
   direct_key       text unique,   -- « uuidA:uuidB » trié, pour ne créer qu'un fil par paire
@@ -89,6 +89,11 @@ create table if not exists public.app_admins (
   user_id     uuid primary key references public.profiles(id) on delete cascade,
   created_at  timestamptz not null default now()
 );
+
+-- Bases créées avant l'arrivée du golf
+alter table public.conversations drop constraint if exists conversations_sport_check;
+alter table public.conversations add constraint conversations_sport_check
+  check (sport is null or sport in ('futsal','padel','golf','dance','gym'));
 
 -- ---------------------------------------------------------------------
 -- 2. Fonctions d'accès (utilisées par la sécurité ci-dessous)

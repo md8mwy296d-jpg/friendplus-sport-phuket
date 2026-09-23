@@ -1,13 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { Globe, Lock } from 'lucide-react';
 import type { GroupInput } from '@/lib/club';
-import type { Sport } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import SportIcon from '@/components/SportIcon';
 import { Modal } from './ClubUI';
+import { SPORTS } from '@/lib/sports';
 
-const SPORTS: Sport[] = ['futsal', 'padel', 'dance', 'gym'];
 const EMPTY: GroupInput = { name: '', description: '', sport: null, isPrivate: false };
 
 /** Create or edit a group. The parent remounts it (key) to reset the fields. */

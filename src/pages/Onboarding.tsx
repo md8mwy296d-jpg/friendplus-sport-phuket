@@ -8,8 +8,9 @@ import { countryOptions } from '@/lib/countries';
 import { cn } from '@/lib/utils';
 import SportIcon from '@/components/SportIcon';
 import AvatarEditor from '@/components/AvatarEditor';
+import { SPORTS } from '@/lib/sports';
 
-const ALL_SPORTS: Sport[] = ['futsal', 'padel', 'dance', 'gym'];
+const ALL_SPORTS = SPORTS;
 const LEVELS: Level[] = ['beginner', 'intermediate', 'advanced'];
 
 export default function Onboarding() {

@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import SessionCard from '@/components/SessionCard';
 import SportIcon from '@/components/SportIcon';
 import CountUp from '@/components/home/CountUp';
+import { SPORTS } from '@/lib/sports';
 import {
   Select,
   SelectContent,
@@ -18,8 +19,7 @@ import {
 } from '@/components/ui/select';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
-const SPORTS: Sport[] = ['futsal', 'padel', 'dance', 'gym'];
-const AREAS = ['Patong', 'Kata', 'Rawai', 'Chalong', 'Phuket Town', 'Bang Tao'];
+const AREAS = ['Patong', 'Kata', 'Rawai', 'Chalong', 'Phuket Town', 'Bang Tao', 'Kathu'];
 const PAGE_SIZE = 9;
 
 type DateFilter = 'all' | 'today' | 'tomorrow' | 'week';

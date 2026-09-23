@@ -2,16 +2,10 @@ import { useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Link } from 'react-router';
 import { ArrowRight } from 'lucide-react';
-import type { Sport } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';
+import { useStore } from '@/lib/store';
+import { SPORTS, hourlyPerPlayer } from '@/lib/sports';
 import SportIcon from '@/components/SportIcon';
-
-const SPORTS: { sport: Sport; image: string; price: number }[] = [
-  { sport: 'futsal', image: '/sport-futsal.jpg', price: 150 },
-  { sport: 'padel', image: '/sport-padel.jpg', price: 200 },
-  { sport: 'dance', image: '/sport-dance.jpg', price: 100 },
-  { sport: 'gym', image: '/sport-gym.jpg', price: 120 },
-];
 
 /** Light 3D tilt (max 4°), desktop only. */
 function Tilt({ children }: { children: React.ReactNode }) {
@@ -40,7 +34,8 @@ function Tilt({ children }: { children: React.ReactNode }) {
 }
 
 export default function SportsTiles() {
-  const { t } = useI18n();
+  const { t, formatTHB } = useI18n();
+  const { rates } = useStore();
   return (
     <section className="relative bg-lagoon-deep pb-24 pt-10 lg:pb-32">
       {/* wave divider on top (dark wave over the light section above) */}
@@ -53,9 +48,11 @@ export default function SportsTiles() {
         </h2>
 
         <div className="mt-12 grid gap-6 md:grid-cols-2">
-          {SPORTS.map((s, i) => (
+          {SPORTS.map((sport, i) => (
             <motion.div
-              key={s.sport}
+              key={sport}
+              // odd count: the last tile spans the full row
+              className={i === SPORTS.length - 1 && SPORTS.length % 2 === 1 ? 'md:col-span-2' : undefined}
               initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.25 }}
@@ -63,24 +60,24 @@ export default function SportsTiles() {
             >
               <Tilt>
                 <Link
-                  to={`/explorer?sport=${s.sport}`}
+                  to={`/explorer?sport=${sport}`}
                   className="group relative block min-h-[280px] overflow-hidden rounded-[20px] border-2 border-transparent transition-colors duration-500 hover:border-[#2FBFA5]/60"
                 >
                   <img
-                    src={s.image}
-                    alt={t(`sport.${s.sport}`)}
+                    src={`/sport-${sport}.jpg`}
+                    alt={t(`sport.${sport}`)}
                     loading="lazy"
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0B2E2B]/85 via-[#0B2E2B]/25 to-transparent transition-opacity duration-500 group-hover:opacity-70" />
                   <div className="relative flex h-full min-h-[280px] flex-col justify-end p-6">
                     <span className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur">
-                      <SportIcon sport={s.sport} className="h-5.5 w-5.5 h-5 w-5" />
+                      <SportIcon sport={sport} className="h-5 w-5" />
                     </span>
-                    <h3 className="font-display text-[28px] font-bold text-white">{t(`sport.${s.sport}`)}</h3>
+                    <h3 className="font-display text-[28px] font-bold text-white">{t(`sport.${sport}`)}</h3>
                     <div className="mt-1.5 flex items-center justify-between gap-3">
                       <p className="font-mono text-sm font-medium text-white/75">
-                        {t(`home.sports.${s.sport}.quota`)} · {t('common.from')} {s.price} {t('common.perPerson')}
+                        {t(`home.sports.${sport}.quota`)} · {formatTHB(hourlyPerPlayer(rates, sport))} {t('create.price.perHour')}
                       </p>
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-golden-hour text-[#0B2E2B] transition-transform duration-300 group-hover:translate-x-1.5">
                         <ArrowRight className="h-4 w-4" />

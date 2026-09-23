@@ -4,6 +4,7 @@ import type { Session as AuthSession } from '@supabase/supabase-js';
 import type { Invitation, Session, Sport, StoreState, ToastItem, User, Venue, Level, Lang } from './types';
 import { useI18n } from './i18n';
 import { supabase, SUPABASE_CONFIGURED } from './supabase';
+import { DEFAULT_RATES, FIXED_QUOTA, pricePerPlayer, type Rates, type SportRate } from './sports';
 
 /** Kept for backward compatibility with older imports (no longer used for data). */
 export const STORAGE_KEY = 'friendplus.v1';
@@ -15,7 +16,6 @@ export interface CreateSessionInput {
   date: string; // ISO
   durationMin: number;
   quota: number;
-  pricePerPerson: number;
   level: Level | 'all';
   mixed: boolean;
   description: string;
@@ -41,6 +41,8 @@ export interface StoreContextValue {
   currentUser: User;
   users: User[];
   venues: Venue[];
+  /** Fixed prices per sport (public.sport_rates). */
+  rates: Rates;
   sessions: Session[];
   invitations: Invitation[];
   // auth
@@ -216,6 +218,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [dataReady, setDataReady] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [venues, setVenues] = useState<Venue[]>([]);
+  const [rates, setRates] = useState<Rates>(DEFAULT_RATES);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [me, setMe] = useState<{ onboarded: boolean; createdAt: string } | null>(null);
@@ -291,6 +294,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // only players who finished onboarding are listed (plus myself)
     setUsers(profileRows.filter((r) => r.onboarded || r.id === myId).map(toUser));
     setVenues(((vRes.data ?? []) as Row[]).map(toVenue));
+    // prices are fixed by FRIEND+; a missing table simply keeps the built-in defaults
+    const { data: rateRows } = await supabase.from('sport_rates').select('sport, amount, per');
+    if (rateRows?.length) {
+      const next: Rates = { ...DEFAULT_RATES };
+      for (const r of rateRows as Row[]) next[r.sport as Sport] = { amount: r.amount, per: r.per } as SportRate;
+      setRates(next);
+    }
     setSessions(nextSessions);
     setInvitations(((iRes.data ?? []) as Row[]).map(toInvitation));
 
@@ -410,10 +420,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       venueId: input.venueId,
       date: input.date,
       durationMin: input.durationMin,
-      quota: input.sport === 'futsal' ? 10 : input.sport === 'padel' ? 4 : input.quota,
+      quota: FIXED_QUOTA[input.sport] ?? input.quota,
       playerIds: [myId],
       waitlistIds: [],
-      pricePerPerson: input.pricePerPerson,
+      // shown until the server answers; create_session() recomputes it from sport_rates
+      pricePerPerson: pricePerPlayer(rates, input.sport, input.durationMin, input.quota),
       level: input.level,
       mixed: input.mixed,
       status: 'open',
@@ -434,7 +445,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         p_starts_at: input.date,
         p_duration_min: input.durationMin,
         p_quota: input.quota,
-        p_price: input.pricePerPerson,
+        p_price: 0, // ignored: the server applies the fixed rate
         p_level: input.level,
         p_mixed: input.mixed,
         p_description: input.description,
@@ -452,7 +463,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     pendingCreates.current.set(id, promise);
     void promise.finally(() => pendingCreates.current.delete(id));
     return optimistic;
-  }, [myId, requireAuth, load, pushToast, pushError, t]);
+  }, [myId, rates, requireAuth, load, pushToast, pushError, t]);
 
   const sendInvitation = useCallback((sessionId: string, toUserId: string, message = '') => {
     if (!requireAuth()) return;
@@ -560,6 +571,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       currentUser,
       users,
       venues,
+      rates,
       sessions,
       invitations,
       ready: authReady && dataReady,
@@ -587,7 +599,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       pushToast,
       refresh: load,
     };
-  }, [users, myId, lang, venues, sessions, invitations, me, toasts, authReady, dataReady, auth,
+  }, [users, myId, lang, venues, rates, sessions, invitations, me, toasts, authReady, dataReady, auth,
     joinSession, leaveSession, cancelSession, createSession, sendInvitation, respondInvitation,
     updateProfile, uploadAvatar, removeAvatar, signOut, resetDemo, dismissToast, pushToast, load]);
 

@@ -12,6 +12,7 @@ import GroupFormModal from '@/components/club/GroupFormModal';
 import UserPickerModal from '@/components/club/UserPickerModal';
 import { ConversationAvatar, UnreadBadge } from '@/components/club/ClubUI';
 import { conversationTitle, useListTime } from '@/lib/club-format';
+import { SPORTS } from '@/lib/sports';
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 type Tab = 'chats' | 'discover';
@@ -216,7 +217,7 @@ export default function Club() {
                 />
               </label>
               <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-                {['all', 'futsal', 'padel', 'dance', 'gym'].map((s) => (
+                {['all', ...SPORTS].map((s) => (
                   <button key={s} onClick={() => setSport(s)} className={chip(sport === s)}>
                     {s !== 'all' && <SportIcon sport={s as 'futsal'} className="h-4 w-4" />}
                     {s === 'all' ? t('club.filter.all') : t(`sport.${s}`)}

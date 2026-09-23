@@ -17,7 +17,7 @@ create table if not exists public.profiles (
   nationality   text not null default '🌍',
   country_code  text not null default '' check (char_length(country_code) <= 2),
   lang          text not null default 'fr' check (lang in ('fr','en','ru','th')),
-  sports        text[] not null default '{}' check (sports <@ array['futsal','padel','dance','gym']),
+  sports        text[] not null default '{}' check (sports <@ array['futsal','padel','golf','dance','gym']),
   level         text not null default 'beginner' check (level in ('beginner','intermediate','advanced')),
   rating        numeric(2,1) not null default 5.0 check (rating between 0 and 5),
   bio           text not null default '' check (char_length(bio) <= 140),
@@ -37,7 +37,7 @@ create table if not exists public.venues (
   id          text primary key,
   name        text not null,
   area        text not null,
-  sports      text[] not null check (sports <@ array['futsal','padel','dance','gym']),
+  sports      text[] not null check (sports <@ array['futsal','padel','golf','dance','gym']),
   address     text not null default '',
   rating      numeric(2,1) not null default 4.5,
   price_from  integer not null default 0,
@@ -50,7 +50,7 @@ create table if not exists public.venues (
 
 create table if not exists public.sessions (
   id                     uuid primary key default gen_random_uuid(),
-  sport                  text not null check (sport in ('futsal','padel','dance','gym')),
+  sport                  text not null check (sport in ('futsal','padel','golf','dance','gym')),
   title                  text not null check (char_length(title) between 3 and 80),
   venue_id               text not null references public.venues(id),
   starts_at              timestamptz not null,
@@ -102,6 +102,34 @@ select p.id, p.name, p.nationality, p.country_code, p.lang, p.sports, p.level,
        p.avatar_path, p.avatar_color
 from public.profiles p;
 
+-- Tarifs fixés par FRIEND+ (les joueurs ne choisissent pas le prix).
+--   per = 'player' : montant par joueur et par heure
+--   per = 'court'  : prix du terrain par heure, partagé entre les joueurs de la session
+-- Pour changer un tarif : Table Editor → sport_rates (s'applique aux nouvelles sessions).
+create table if not exists public.sport_rates (
+  sport   text primary key check (sport in ('futsal','padel','golf','dance','gym')),
+  amount  integer not null check (amount between 0 and 100000),
+  per     text not null check (per in ('player','court'))
+);
+insert into public.sport_rates (sport, amount, per) values
+  ('padel', 2200, 'court'),
+  ('futsal', 300, 'player'),
+  ('golf',   120, 'player'),
+  ('dance',  120, 'player'),
+  ('gym',    120, 'player')
+on conflict (sport) do nothing;
+
+-- Bases créées avant l'arrivée du golf : élargir les contraintes existantes
+alter table public.profiles drop constraint if exists profiles_sports_check;
+alter table public.profiles add constraint profiles_sports_check
+  check (sports <@ array['futsal','padel','golf','dance','gym']);
+alter table public.venues drop constraint if exists venues_sports_check;
+alter table public.venues add constraint venues_sports_check
+  check (sports <@ array['futsal','padel','golf','dance','gym']);
+alter table public.sessions drop constraint if exists sessions_sport_check;
+alter table public.sessions add constraint sessions_sport_check
+  check (sport in ('futsal','padel','golf','dance','gym'));
+
 -- ---------------------------------------------------------------------
 -- 2. Création automatique du profil à l'inscription
 -- ---------------------------------------------------------------------
@@ -143,6 +171,10 @@ create policy "je modifie mon profil" on public.profiles for update
 revoke update on public.profiles from anon, authenticated;
 grant update (name, nationality, country_code, lang, sports, level, bio, onboarded, avatar_path, avatar_color)
   on public.profiles to authenticated;
+
+alter table public.sport_rates enable row level security;
+drop policy if exists "tarifs lisibles" on public.sport_rates;
+create policy "tarifs lisibles" on public.sport_rates for select using (true);
 
 drop policy if exists "salles lisibles" on public.venues;
 create policy "salles lisibles" on public.venues for select using (active);
@@ -195,6 +227,8 @@ declare
   me uuid := auth.uid();
   v_deadline timestamptz;
   v_quota integer := p_quota;
+  v_rate public.sport_rates%rowtype;
+  v_price integer;
 begin
   if me is null then raise exception 'not_authenticated'; end if;
   if not exists (select 1 from public.profiles where id = me and onboarded) then
@@ -204,7 +238,13 @@ begin
   if not exists (select 1 from public.venues v where v.id = p_venue_id and v.active and p_sport = any(v.sports)) then
     raise exception 'venue_sport_mismatch';
   end if;
-  if p_sport = 'futsal' then v_quota := 10; elsif p_sport = 'padel' then v_quota := 4; end if;
+  if p_sport = 'futsal' then v_quota := 10; elsif p_sport in ('padel','golf') then v_quota := 4; end if;
+  if v_quota is null or v_quota not between 2 and 30 then raise exception 'invalid_input'; end if;
+  -- le prix ne vient jamais du joueur : tarif fixe × durée (÷ joueurs si le tarif est celui du terrain)
+  select * into v_rate from public.sport_rates where sport = p_sport;
+  if not found then raise exception 'invalid_input'; end if;
+  v_price := round(v_rate.amount * p_duration_min / 60.0
+                   / case when v_rate.per = 'court' then v_quota else 1 end);
   v_deadline := p_starts_at - make_interval(hours => p_confirm_hours);
   if v_deadline <= now() then raise exception 'too_soon'; end if;
   if p_starts_at > now() + interval '90 days' then raise exception 'too_far'; end if;
@@ -216,7 +256,7 @@ begin
   insert into public.sessions (id, sport, title, venue_id, starts_at, duration_min, quota,
     price_per_person, level, mixed, confirmation_deadline, creator_id, description)
   values (coalesce(p_id, gen_random_uuid()), p_sport, trim(p_title), p_venue_id, p_starts_at,
-    p_duration_min, v_quota, p_price, p_level, p_mixed, v_deadline, me, coalesce(p_description, ''))
+    p_duration_min, v_quota, v_price, p_level, p_mixed, v_deadline, me, coalesce(p_description, ''))
   returning id into p_id;
 
   insert into public.session_players (session_id, user_id, kind) values (p_id, me, 'player');
@@ -357,7 +397,7 @@ grant select on public.public_profiles to anon, authenticated;
 
 -- Droits de lecture explicites : les projets Supabase récents ne les accordent plus
 -- automatiquement aux nouvelles tables. Les règles RLS ci-dessus filtrent les lignes.
-grant select on public.venues, public.sessions, public.session_players, public.profiles to anon, authenticated;
+grant select on public.venues, public.sessions, public.session_players, public.profiles, public.sport_rates to anon, authenticated;
 grant select on public.invitations to authenticated;
 
 -- ---------------------------------------------------------------------
@@ -380,8 +420,14 @@ insert into public.venues (id, name, area, sports, address, rating, price_from, 
  ('v-chalong', 'Chalong Fit Studio',     'Chalong',     array['gym','dance'],    'Chao Fa West Rd, Chalong',      4.6, 120, '/venue-chalong.jpg', array['Climatisation','Tapis fournis','Coaching'], '06:00 – 21:00'),
  ('v-town',    'Old Town Dance House',   'Phuket Town', array['dance'],          'Thalang Rd, Phuket Town',       4.8, 100, '/venue-town.jpg',    array['Miroirs','Sono pro','Studio climatisé'], '09:00 – 21:00'),
  ('v-rawai',   'Rawai Futsal Dome',      'Rawai',       array['futsal'],         'Wiset Rd, Rawai',               4.5, 130, '/venue-rawai.jpg',   array['Terrain couvert','Éclairage LED','Parking'], '08:00 – 23:00'),
- ('v-bangtao', 'Bang Tao Sports Resort', 'Bang Tao',    array['padel','gym'],    'Laguna Area, Choeng Thale',     4.9, 250, '/venue-bangtao.jpg', array['Resort premium','Yoga deck','Piscine','Spa'], '06:00 – 22:00')
+ ('v-bangtao', 'Bang Tao Sports Resort', 'Bang Tao',    array['padel','gym'],    'Laguna Area, Choeng Thale',     4.9, 250, '/venue-bangtao.jpg', array['Resort premium','Yoga deck','Piscine','Spa'], '06:00 – 22:00'),
+ ('v-golf',    'Kathu Hills Golf Club',  'Kathu',       array['golf'],           'Vichitsongkram Rd, Kathu',      4.7, 120, '/sport-golf.jpg',    array['Parcours 18 trous','Practice','Location de clubs','Club-house'], '06:00 – 18:00')
 on conflict (id) do nothing;
+
+-- « À partir de » affiché sur les salles = tarif horaire par joueur le moins cher de ses sports
+update public.venues v set price_from = coalesce((
+  select min(case when r.per = 'court' then round(r.amount / case r.sport when 'futsal' then 10.0 else 4.0 end) else r.amount end)
+  from public.sport_rates r where r.sport = any(v.sports)), v.price_from);
 
 -- ---------------------------------------------------------------------
 -- 7. Tâche planifiée : évaluation des deadlines toutes les 5 minutes

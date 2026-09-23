@@ -1,4 +1,4 @@
-export type Sport = 'futsal' | 'padel' | 'dance' | 'gym';
+export type Sport = 'futsal' | 'padel' | 'golf' | 'dance' | 'gym';
 export type Lang = 'fr' | 'en' | 'ru' | 'th';
 export type Level = 'beginner' | 'intermediate' | 'advanced';
 export type SessionStatus = 'open' | 'full' | 'confirmed' | 'cancelled';
