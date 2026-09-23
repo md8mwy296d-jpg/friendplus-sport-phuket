@@ -1,7 +1,7 @@
 # FRIEND+ Sport Phuket — historique et état du projet
 
 > Fichier de reprise. À ouvrir en premier dans Claude Code (`claude` puis « lis HISTORIQUE-PROJET.md »).
-> Dernière mise à jour : 23 septembre 2026 (Social Club + app mobile).
+> Dernière mise à jour : 23 septembre 2026 (droits de lecture Supabase, vérification du site en ligne).
 
 ---
 
@@ -19,12 +19,32 @@ Public visé : voyageurs et résidents, d'où les 4 langues (FR, EN, RU, TH).
 |---|---|
 | Code de l'application (v1 production) | ✅ Terminé, dans le dépôt |
 | Base de données Supabase (`supabase/schema.sql`) | ✅ Exécutée |
-| Social Club (`supabase/club.sql`) | ⬜ À exécuter dans Supabase après fusion |
+| Social Club (`supabase/club.sql`) | ✅ Exécuté (tables, fonctions, stockage photos, 1 admin) |
 | Application mobile (PWA) | ✅ Dans le code, active dès le déploiement |
 | Dépôt GitHub `friendplus-sport-phuket` | ✅ Arborescence reconstruite (branche `claude/reprise-projet-5kelx0`), build OK |
-| Projet Vercel + domaine `friendplussport.center` | ✅ Déploiement vert, variables Supabase en place |
-| SMTP (e-mails de connexion) | 🔄 En cours : compte Resend, DNS du domaine à ajouter |
+| Projet Vercel + domaine `friendplussport.center` | ⚠️ Site en ligne, mais compilé **sans** les clés Supabase (voir ci-dessous) |
+| SMTP (e-mails de connexion) | 🔄 Domaine créé dans Resend (Tokyo), 3 enregistrements DNS à ajouter, puis SMTP à brancher dans Supabase |
 | Vraies salles partenaires | ⬜ À saisir (les 6 salles installées sont fictives) |
+
+### ✅ Corrigé : aucune table n'était lisible (23 septembre 2026, soir)
+
+Les projets Supabase récents n'accordent plus automatiquement le droit de lecture aux rôles `anon` et
+`authenticated` sur les nouvelles tables. Résultat : même avec RLS correcte, l'app ne pouvait rien lire
+(salles, sessions, profils, discussions) et l'écran « Bienvenue » échouait. Ajout de `grant select`
+explicites dans `schema.sql` et `club.sql`, appliqués à la base. Au passage, fermeture des fonctions
+internes (`handle_new_user`, `is_app_admin`, `is_conversation_member`, `_chat_image_readable`) aux visiteurs
+non connectés. Parcours testé en base (profil, création de session padel, chat de session, message) : OK.
+
+### ⚠️ Site en ligne sans clés Supabase
+
+Le code servi sur `www.friendplussport.center` contient `missing-project.supabase.co` : il a été compilé
+sans `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. Vite intègre ces valeurs **au moment de la compilation** :
+après avoir ajouté ou modifié une variable dans Vercel, il faut **redéployer**. Attention, il existe deux
+projets Vercel (`friendplus-sport-phuket` et `friendplus-sport-phuket-wsst`) : vérifier lequel porte le
+domaine, y mettre les variables, et supprimer l'autre.
+
+Valeurs à utiliser : URL `https://fqrlyykadbzaxzjneupm.supabase.co`, clé = « anon / publishable » de
+Supabase → Project Settings → API.
 
 ### ✅ Blocage résolu (23 septembre 2026)
 
@@ -104,12 +124,18 @@ RLS active partout. Lecture publique pour `venues`, `sessions`, `session_players
 
 ### Avant le lancement (bloquant)
 
-1. **Réparer le dépôt GitHub** (voir section 2) et obtenir un déploiement Vercel vert.
-2. **Exécuter `supabase/schema.sql`** dans Supabase → SQL Editor. Activer l'extension `pg_cron` avant (Database → Extensions).
-3. **Variables d'environnement Vercel** : `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` (`VITE_ENABLE_GOOGLE` est facultatif).
+1. ~~Réparer le dépôt GitHub~~ ✅
+2. ~~Exécuter `schema.sql` et `club.sql`~~ ✅ (pg_cron actif, tâche toutes les 5 min)
+3. **Variables d'environnement Vercel** puis **redéployer** (voir section 2) : `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` (`VITE_ENABLE_GOOGLE` est facultatif).
 4. **Supabase → Authentication → URL Configuration** : Site URL `https://www.friendplussport.center`, Redirect URLs `https://www.friendplussport.center/**`.
 5. **Modèle d'e-mail Magic Link** : ajouter `{{ .Token }}` pour que le code à 6 chiffres apparaisse, sinon les joueurs ne reçoivent qu'un lien.
 6. **SMTP Resend** : obligatoire, l'envoi intégré de Supabase est limité à quelques e-mails par heure.
+   Enregistrements DNS à ajouter chez le gestionnaire du domaine :
+   - TXT `resend._domainkey` → clé DKIM affichée dans Resend → Domains
+   - MX `send` → `feedback-smtp.ap-northeast-1.amazonses.com` (priorité 10)
+   - TXT `send` → `v=spf1 include:amazonses.com ~all`
+   Puis Supabase → Authentication → SMTP : hôte `smtp.resend.com`, port 465, utilisateur `resend`,
+   mot de passe = une clé API Resend, expéditeur `noreply@friendplussport.center`.
 7. **Remplacer les 6 salles fictives** (Patong Sports Arena, Kata Beach Padel Club, etc.) par les vraies salles partenaires, dans la table `venues`.
 8. **Mentions légales, CGU, politique de confidentialité** (RGPD pour les Européens, PDPA en Thaïlande).
 
@@ -134,7 +160,9 @@ RLS active partout. Lecture publique pour `venues`, `sessions`, `session_players
 ## 6. Points d'attention
 
 - **Le build Vercel n'exécute pas `tsc`** : le script `build` est volontairement `vite build`, pour éviter qu'une erreur de typage bloque un déploiement. Utiliser `npm run typecheck` en local.
-- **`package-lock.json` a été supprimé** : le fichier d'origine pointait vers un miroir npm chinois (`npmmirror.com`). Un nouveau lock sera généré au premier `npm install`, il faudra le committer.
+- **`package-lock.json`** régénéré sur le registre npm officiel (l'original pointait vers `npmmirror.com`).
+- **Table `public.friendplussport`** : vide, absente du code, sans règle d'accès ; créée à la main dans Supabase. Peut être supprimée.
+- **Nouvelle table dans Supabase** : penser au `grant select … to authenticated` (et `anon` si publique) en plus des règles RLS.
 - **Le plugin `plugin-inspect-react-code`** (outil de la plateforme qui a généré le prototype) a été retiré de `vite.config.ts`.
 - **Chiffres de la page d'accueil** : calculés en direct depuis la base. Ils seront donc petits au lancement. Les valeurs fictives (128 joueurs, etc.) ont été supprimées.
 - **Versions non maintenues** signalées par npm (recharts 2.x, eslint 9.x) : sans conséquence, migration possible plus tard.
