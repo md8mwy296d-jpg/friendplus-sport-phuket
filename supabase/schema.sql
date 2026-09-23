@@ -111,6 +111,9 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- Fonction de trigger uniquement : pas d'appel direct via l'API
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+
 -- ---------------------------------------------------------------------
 -- 3. Sécurité (Row Level Security)
 --    Lecture publique des sessions/salles/profils ; toute écriture sensible
@@ -343,6 +346,11 @@ grant execute on function public.send_invitation(uuid,uuid,text) to authenticate
 grant execute on function public.respond_invitation(uuid,boolean) to authenticated;
 grant execute on function public.evaluate_sessions() to anon, authenticated;
 grant select on public.public_profiles to anon, authenticated;
+
+-- Droits de lecture explicites : les projets Supabase récents ne les accordent plus
+-- automatiquement aux nouvelles tables. Les règles RLS ci-dessus filtrent les lignes.
+grant select on public.venues, public.sessions, public.session_players, public.profiles to anon, authenticated;
+grant select on public.invitations to authenticated;
 
 -- ---------------------------------------------------------------------
 -- 5. Temps réel (mise à jour live du compteur « 7/10 joueurs »)

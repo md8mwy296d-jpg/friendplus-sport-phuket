@@ -577,7 +577,16 @@ begin
   end loop;
 end $$;
 
--- Utilisées par les règles de sécurité : doivent rester exécutables
+-- Lecture des discussions (filtrée par les règles RLS de la section 3).
+-- group_bans et reports restent inaccessibles depuis l'app.
+grant select on public.conversations, public.conversation_members, public.messages,
+               public.user_blocks, public.app_admins to authenticated;
+
+-- Utilisées par les règles de sécurité (toutes réservées aux membres connectés) :
+-- exécutables par les comptes connectés uniquement
+revoke execute on function public.is_conversation_member(uuid) from public, anon;
+revoke execute on function public.is_app_admin() from public, anon;
+revoke execute on function public._chat_image_readable(text) from public, anon;
 grant execute on function public.is_conversation_member(uuid) to authenticated;
 grant execute on function public.is_app_admin() to authenticated;
 grant execute on function public._chat_image_readable(text) to authenticated;
