@@ -1,7 +1,7 @@
 # FRIEND+ Sport Phuket — historique et état du projet
 
 > Fichier de reprise. À ouvrir en premier dans Claude Code (`claude` puis « lis HISTORIQUE-PROJET.md »).
-> Dernière mise à jour : 23 septembre 2026 (droits de lecture Supabase, vérification du site en ligne).
+> Dernière mise à jour : 23 septembre 2026 (version mobile : compte, photo de profil, débordement d'écran).
 
 ---
 
@@ -23,7 +23,8 @@ Public visé : voyageurs et résidents, d'où les 4 langues (FR, EN, RU, TH).
 | Application mobile (PWA) | ✅ Dans le code, active dès le déploiement |
 | Dépôt GitHub `friendplus-sport-phuket` | ✅ Arborescence reconstruite (branche `claude/reprise-projet-5kelx0`), build OK |
 | Projet Vercel + domaine `friendplussport.center` | ✅ Projet `friendplus-sport-phuket`, relié à Supabase (vérifié en ligne) |
-| SMTP (e-mails de connexion) | 🔄 Domaine créé dans Resend (Tokyo), 3 enregistrements DNS à ajouter, puis SMTP à brancher dans Supabase |
+| SMTP (e-mails de connexion) | 🔄 Domaine Resend vérifié, clé « envoi seul » créée ; SMTP Supabase saisi mais identifiants refusés (535) au 1er essai, à revérifier |
+| Photo de profil | ✅ Stockage `avatars` + colonnes `avatar_path` / `avatar_color` (exécuté) |
 | Vraies salles partenaires | ⬜ À saisir (les 6 salles installées sont fictives) |
 
 ### ✅ Corrigé : aucune table n'était lisible (23 septembre 2026, soir)
@@ -34,6 +35,20 @@ Les projets Supabase récents n'accordent plus automatiquement le droit de lectu
 explicites dans `schema.sql` et `club.sql`, appliqués à la base. Au passage, fermeture des fonctions
 internes (`handle_new_user`, `is_app_admin`, `is_conversation_member`, `_chat_image_readable`) aux visiteurs
 non connectés. Parcours testé en base (profil, création de session padel, chat de session, message) : OK.
+
+### ✅ Version mobile corrigée (23 septembre 2026, soir)
+
+- **Page plus large que l'écran** : les badges de sports du pied de page (et une animation de l'accueil)
+  dépassaient ; le téléphone dézoomait et la barre d'onglets du bas sortait de l'écran. Corrigé, avec
+  une sécurité globale `overflow-x: clip` sur `html` et `body`.
+- **Compte invisible sur téléphone** : le bouton « Se connecter » / l'avatar étaient masqués sous 640 px.
+  Ils sont maintenant toujours affichés (le choix de langue passe dans le menu ☰ sur petit écran).
+- **Barre d'onglets** : Explorer · Club · Créer · Mes sessions · **Profil** (avatar du joueur, ou
+  « Connexion » si déconnecté). L'accueil reste accessible par le logo.
+- **Photo de profil** : composant `AvatarEditor` (écran « Bienvenue » et page Profil). La photo est
+  recadrée en carré 320 px côté navigateur puis envoyée dans le stockage public `avatars/<id joueur>/`.
+  À défaut, 8 couleurs au choix, enregistrées en base (avant : dans le navigateur seulement).
+  Visible partout où `PlayerAvatar` est utilisé (sessions, Club, invitations).
 
 ### ✅ Corrigé : site en ligne sans clés Supabase
 
@@ -97,6 +112,7 @@ les 132 fichiers à plat à la racine du dépôt. L'arborescence a été reconst
 | `src/lib/club.ts` | Pont Club ↔ Supabase : discussions, non-lus, temps réel, envoi de photos |
 | `src/pages/Club.tsx`, `src/pages/Conversation.tsx` | Liste des discussions / découverte des groupes, écran de discussion |
 | `src/components/mobile/` | Barre d'onglets mobile, bannière « Installer l'app » |
+| `src/components/AvatarEditor.tsx`, `src/lib/avatar.ts` | Choix de la photo / couleur de profil |
 | `DEPLOIEMENT.md` | Guide de mise en ligne pas à pas |
 
 ### Modèle de données
@@ -155,7 +171,7 @@ RLS active partout. Lecture publique pour `venues`, `sessions`, `session_players
 1. Notifications hors app (e-mail, LINE ou WhatsApp) à la confirmation ou l'annulation : aujourd'hui le joueur doit ouvrir l'app.
 2. Paiement à l'inscription (Stripe, ou Omise qui gère PromptPay) pour réduire les absences.
 3. Signalement d'un joueur et modération.
-4. PWA : installation sur l'écran d'accueil sans passer par les stores.
+4. ~~PWA~~ ✅ fait.
 5. Kit partenariats et fichier de prospection des salles (fournis dans le zip d'origine) à exploiter côté commercial.
 
 ---

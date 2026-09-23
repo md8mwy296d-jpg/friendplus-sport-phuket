@@ -1,32 +1,38 @@
 import { NavLink } from 'react-router';
-import { CalendarCheck, CirclePlus, Compass, House, MessageCircle } from 'lucide-react';
+import { CalendarCheck, CirclePlus, Compass, MessageCircle, UserRound } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useClub } from '@/lib/club';
+import { useStore } from '@/lib/store';
+import PlayerAvatar from '@/components/PlayerAvatar';
 import { cn } from '@/lib/utils';
 
+// Home stays one tap away through the logo; the last tab is the player's account.
 const TABS = [
-  { to: '/', key: 'nav.home', icon: House, end: true },
   { to: '/explorer', key: 'nav.explore', icon: Compass },
-  { to: '/creer', key: 'nav.create', icon: CirclePlus, accent: true },
   { to: '/club', key: 'nav.club', icon: MessageCircle },
+  { to: '/creer', key: 'nav.create', icon: CirclePlus, accent: true },
   { to: '/mes-sessions', key: 'nav.mySessions', icon: CalendarCheck },
+  { to: '/profil', key: 'nav.profile', icon: UserRound, account: true },
 ];
 
 /** App-style bottom navigation on phones (hidden from the lg breakpoint, where the top bar has room). */
 export default function MobileTabBar() {
   const { t } = useI18n();
   const { unreadTotal } = useClub();
+  const { isAuthenticated, currentUser } = useStore();
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-40 border-t border-[#EADFC8] bg-[rgba(251,246,236,.92)] pb-[env(safe-area-inset-bottom)] backdrop-blur-[12px] lg:hidden"
       aria-label="Navigation"
     >
       <ul className="mx-auto flex h-16 max-w-lg items-stretch">
-        {TABS.map(({ to, key, icon: Icon, end, accent }) => (
+        {TABS.map(({ to, key, icon: Icon, accent, account }) => {
+          const guest = account && !isAuthenticated;
+          const label = guest ? 'nav.signIn' : key;
+          return (
           <li key={to} className="flex-1">
             <NavLink
-              to={to}
-              end={end}
+              to={guest ? '/connexion' : to}
               aria-label={accent ? t(key) : undefined}
               className={({ isActive }) => cn(
                 'relative flex h-full flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors',
@@ -39,6 +45,10 @@ export default function MobileTabBar() {
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-coral-pop text-white shadow-coral">
                       <Icon className="h-5 w-5" strokeWidth={2.4} />
                     </span>
+                  ) : account && isAuthenticated ? (
+                    <span className={cn('rounded-full', isActive && 'ring-2 ring-[#0A6E64] ring-offset-1 ring-offset-[#FBF6EC]')}>
+                      <PlayerAvatar user={currentUser} size={24} ring={false} />
+                    </span>
                   ) : (
                     <span className="relative">
                       <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2.4 : 1.9} />
@@ -49,12 +59,13 @@ export default function MobileTabBar() {
                       )}
                     </span>
                   )}
-                  {!accent && <span className="max-w-full truncate px-1">{t(key)}</span>}
+                  {!accent && <span className="max-w-full truncate px-1">{t(label)}</span>}
                 </>
               )}
             </NavLink>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </nav>
   );

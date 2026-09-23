@@ -11,6 +11,7 @@ import { LANGS, useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import SportIcon from '@/components/SportIcon';
 import CountUp from '@/components/home/CountUp';
+import AvatarEditor from '@/components/AvatarEditor';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 const ALL_SPORTS: Sport[] = ['futsal', 'padel', 'dance', 'gym'];
@@ -20,31 +21,8 @@ const LANG_CHOICES = ['FR', 'EN', 'RU', 'TH', 'DE', 'ES', 'IT', 'ZH'];
 const EXTRAS_KEY = 'friendplus.profileExtras';
 const SAVED_FLAG = 'friendplus.flashSaved';
 
-/** Same deterministic tropical palette as PlayerAvatar. */
-const GRADIENTS = [
-  ['#0E8C7F', '#2FBFA5'],
-  ['#FF6B4A', '#FFB547'],
-  ['#1E5945', '#0E8C7F'],
-  ['#5B7CFF', '#2FBFA5'],
-  ['#FFB547', '#FF6B4A'],
-  ['#0B2E2B', '#1E5945'],
-  ['#F05252', '#FF6B4A'],
-  ['#2FBFA5', '#5B7CFF'],
-];
-
-function hash(str: string): number {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
-  return Math.abs(h);
-}
-
-function initials(name: string): string {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('');
-}
-
 interface NotifPrefs { reminder: boolean; invites: boolean; newSessions: boolean }
 interface Extras {
-  avatar: number | null;
   sportLevels: Partial<Record<Sport, Level>>;
   languages: string[];
   notif: NotifPrefs;
@@ -53,7 +31,6 @@ interface Extras {
 
 function loadExtras(defaultArea: string, defaultLang: string): Extras {
   const fallback: Extras = {
-    avatar: null,
     sportLevels: {},
     languages: [defaultLang],
     notif: { reminder: true, invites: true, newSessions: true },
@@ -123,7 +100,6 @@ export default function Profile() {
 
   const [extras, setExtras] = useState<Extras>(() =>
     loadExtras(venues[0]?.area ?? 'Patong', currentUser.lang.toUpperCase()));
-  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [saved, setSaved] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [flash, setFlash] = useState<string | null>(null);
@@ -211,8 +187,6 @@ export default function Profile() {
     window.setTimeout(() => { setSaved(false); setFlash(null); }, 3000);
   };
 
-  const avatarGradient = GRADIENTS[extras.avatar ?? (hash(name || currentUser.name) % GRADIENTS.length)];
-
   const sectionMotion = {
     initial: { opacity: 0, y: 40 },
     whileInView: { opacity: 1, y: 0 },
@@ -245,52 +219,7 @@ export default function Profile() {
             <div className="space-y-7 p-6 sm:p-8">
               {/* top row: avatar + name + nationality + level */}
               <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-                <div className="shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setAvatarPickerOpen((v) => !v)}
-                    aria-label={t('profile.avatarColor')}
-                    className="relative block rounded-full transition-transform hover:scale-[1.04]"
-                  >
-                    <span
-                      className="flex h-24 w-24 items-center justify-center rounded-full font-display text-3xl font-bold text-white ring-4 ring-white shadow-[0_8px_24px_rgba(11,46,43,.18)]"
-                      style={{ background: `linear-gradient(135deg, ${avatarGradient[0]}, ${avatarGradient[1]})` }}
-                    >
-                      {initials(name || currentUser.name) || '?'}
-                    </span>
-                    <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-[#0B2E2B] text-lg ring-4 ring-white">
-                      {flag}
-                    </span>
-                  </button>
-                  <AnimatePresence>
-                    {avatarPickerOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                        transition={{ duration: 0.2, ease: EASE }}
-                        className="mt-3 w-56 rounded-2xl border border-[#EADFC8] bg-white p-3 shadow-lg"
-                      >
-                        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#0B2E2B]/45">{t('profile.avatarColor')}</p>
-                        <div className="grid grid-cols-4 gap-2">
-                          {GRADIENTS.map((g, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => { setExtras((p) => ({ ...p, avatar: i })); setAvatarPickerOpen(false); }}
-                              aria-label={`${t('profile.avatarColor')} ${i + 1}`}
-                              className={cn(
-                                'h-10 w-10 rounded-full transition-transform hover:scale-110',
-                                extras.avatar === i && 'ring-2 ring-[#FF6B4A] ring-offset-2',
-                              )}
-                              style={{ background: `linear-gradient(135deg, ${g[0]}, ${g[1]})` }}
-                            />
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                <AvatarEditor name={name} flag={flag} className="shrink-0 sm:w-56" />
 
                 <div className="min-w-0 flex-1 space-y-4">
                   <div>

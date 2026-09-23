@@ -106,7 +106,7 @@ export default function Footer() {
           </div>
 
           {/* sport icons strip */}
-          <div className="mt-10 flex gap-3 border-t border-white/10 pt-8">
+          <div className="mt-10 flex flex-wrap gap-3 border-t border-white/10 pt-8">
             {SPORTS.map((s) => (
               <span key={s} className="inline-flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 text-xs font-semibold text-white/60">
                 <SportIcon sport={s} className="h-3.5 w-3.5 text-[#2FBFA5]" />

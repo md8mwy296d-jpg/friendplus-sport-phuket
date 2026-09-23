@@ -16,6 +16,10 @@ export interface User {
   bio: string;
   joinedCount: number;
   organizedCount: number;
+  /** Public URL of the profile photo, '' when none. */
+  avatarUrl: string;
+  /** Index in the avatar gradient palette chosen by the player, null = derived from the name. */
+  avatarColor: number | null;
 }
 
 export interface Venue {

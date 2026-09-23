@@ -145,7 +145,7 @@ function DemoCard() {
 export default function MechanicSection() {
   const { t } = useI18n();
   return (
-    <section className="bg-[#FBF6EC] py-20 lg:py-28">
+    <section className="overflow-x-clip bg-[#FBF6EC] py-20 lg:py-28">
       <div className="mx-auto grid max-w-[1280px] items-center gap-14 px-6 lg:grid-cols-2 lg:px-12">
         <motion.div
           initial={{ opacity: 0, x: -40 }}

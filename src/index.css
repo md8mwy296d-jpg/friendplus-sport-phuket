@@ -71,10 +71,13 @@
   }
   html {
     scroll-behavior: smooth;
+    overflow-x: clip;
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
     font-feature-settings: "tnum" 0;
+    /* nothing may widen the page on phones: a wider page zooms out and pushes the tab bar off-screen */
+    overflow-x: clip;
   }
   ::selection {
     background: #ffb547;

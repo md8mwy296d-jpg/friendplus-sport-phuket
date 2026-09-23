@@ -216,7 +216,7 @@ export default function Navbar() {
           : 'border-b border-[#EADFC8] bg-[rgba(251,246,236,.8)] backdrop-blur-[12px]',
       )}
     >
-      <div className="mx-auto flex h-[72px] max-w-[1280px] items-center gap-4 px-6 lg:px-12">
+      <div className="mx-auto flex h-[72px] max-w-[1280px] items-center gap-3 px-4 sm:gap-4 sm:px-6 lg:px-12">
         <Logo dark={dark} />
 
         {/* desktop links */}
@@ -254,22 +254,25 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2.5">
-          <LanguageSelector dark={dark} />
+        <div className="ml-auto flex items-center gap-2 sm:gap-2.5">
+          {/* on phones the language picker lives in the menu, leaving room for the account button */}
+          <div className="hidden sm:block">
+            <LanguageSelector dark={dark} />
+          </div>
           <Link
             to="/creer"
             className="hidden h-10 items-center rounded-full bg-[linear-gradient(135deg,#FF6B4A,#FFB547)] px-5 text-sm font-bold text-white shadow-[0_8px_24px_rgba(255,107,74,.35)] transition-transform hover:scale-[1.03] sm:inline-flex"
           >
             {t('nav.ctaCreate')}
           </Link>
-          <div className="hidden sm:block">
+          <div>
             {isAuthenticated ? (
               <AvatarMenu dark={dark} />
             ) : (
               <Link
                 to={`/connexion?next=${encodeURIComponent(location.pathname)}`}
                 className={cn(
-                  'inline-flex h-10 items-center rounded-full border px-5 text-sm font-semibold transition-colors',
+                  'inline-flex h-10 items-center rounded-full border px-4 text-sm font-semibold transition-colors sm:px-5',
                   dark ? 'border-white/30 text-white hover:bg-white/10' : 'border-[#EADFC8] bg-white text-[#0B2E2B] hover:bg-[#FBF6EC]',
                 )}
               >

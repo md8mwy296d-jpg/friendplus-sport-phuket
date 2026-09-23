@@ -7,6 +7,7 @@ import { useStore } from '@/lib/store';
 import { countryOptions } from '@/lib/countries';
 import { cn } from '@/lib/utils';
 import SportIcon from '@/components/SportIcon';
+import AvatarEditor from '@/components/AvatarEditor';
 
 const ALL_SPORTS: Sport[] = ['futsal', 'padel', 'dance', 'gym'];
 const LEVELS: Level[] = ['beginner', 'intermediate', 'advanced'];
@@ -76,6 +77,11 @@ export default function Onboarding() {
       <p className="mt-3 text-[15px] text-[#0B2E2B]/60">{t('onboard.subtitle')}</p>
 
       <form onSubmit={submit} noValidate className="mt-8 flex flex-col gap-6 rounded-[24px] border border-[#EADFC8] bg-white p-6 shadow-[0_2px_8px_rgba(11,46,43,.06)] sm:p-8">
+        <div className="flex flex-col items-center gap-1">
+          <AvatarEditor name={name} flag={countries.find((c) => c.code === country)?.flag} size={88} />
+          <p className="text-xs text-[#0B2E2B]/50">{t('avatar.optional')}</p>
+        </div>
+
         <div className="flex flex-col gap-2">
           <label htmlFor="ob-name" className={labelCls}>{t('onboard.name')}</label>
           <input id="ob-name" value={name} maxLength={60} autoComplete="given-name" onChange={(e) => setName(e.target.value)} placeholder={t('onboard.namePh')} className={fieldCls} />
