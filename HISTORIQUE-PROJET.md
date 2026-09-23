@@ -50,6 +50,15 @@ non connectés. Parcours testé en base (profil, création de session padel, cha
   À défaut, 8 couleurs au choix, enregistrées en base (avant : dans le navigateur seulement).
   Visible partout où `PlayerAvatar` est utilisé (sessions, Club, invitations).
 
+### ✅ Rejoindre une session depuis un téléphone (23 septembre 2026, soir)
+
+Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscrire : sur téléphone, le bouton
+« Rejoindre la session » était ~4 écrans plus bas, et la bannière « Installe FRIEND+ » le recouvrait.
+- Barre d'action fixe au-dessus des onglets (prix, places restantes, Rejoindre / Liste d'attente /
+  **Accepter l'invitation** si le joueur a une invitation en attente / Discussion si déjà inscrit).
+- La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
+- Pied de page : « Prototype démo — données simulées » remplacé.
+
 ### ✅ Corrigé : site en ligne sans clés Supabase
 
 Les variables Vercel avaient été saisies en minuscules (`vite_supabase_url`…). Vite ne lit que les noms

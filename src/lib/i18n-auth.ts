@@ -5,6 +5,7 @@ export const AUTH_DICTS: Record<'fr' | 'en' | 'ru' | 'th', Dict> = {
   fr: {
     'auth.login': 'Se connecter',
     'nav.signIn': 'Connexion',
+    'detail.action.acceptInvite': 'Accepter l’invitation',
     'avatar.add': 'Ajouter une photo',
     'avatar.change': 'Changer la photo',
     'avatar.remove': 'Retirer',
@@ -68,6 +69,7 @@ export const AUTH_DICTS: Record<'fr' | 'en' | 'ru' | 'th', Dict> = {
   en: {
     'auth.login': 'Log in',
     'nav.signIn': 'Log in',
+    'detail.action.acceptInvite': 'Accept invitation',
     'avatar.add': 'Add a photo',
     'avatar.change': 'Change photo',
     'avatar.remove': 'Remove',
@@ -131,6 +133,7 @@ export const AUTH_DICTS: Record<'fr' | 'en' | 'ru' | 'th', Dict> = {
   ru: {
     'auth.login': 'Войти',
     'nav.signIn': 'Вход',
+    'detail.action.acceptInvite': 'Принять приглашение',
     'avatar.add': 'Добавить фото',
     'avatar.change': 'Сменить фото',
     'avatar.remove': 'Удалить',
@@ -194,6 +197,7 @@ export const AUTH_DICTS: Record<'fr' | 'en' | 'ru' | 'th', Dict> = {
   th: {
     'auth.login': 'เข้าสู่ระบบ',
     'nav.signIn': 'เข้าสู่ระบบ',
+    'detail.action.acceptInvite': 'ตอบรับคำเชิญ',
     'avatar.add': 'เพิ่มรูปภาพ',
     'avatar.change': 'เปลี่ยนรูป',
     'avatar.remove': 'ลบ',

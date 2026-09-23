@@ -62,7 +62,7 @@ function StepDot({ state }: { state: StepState }) {
 
 export default function SessionDetail() {
   const { id } = useParams();
-  const { getSession, getVenue, getUser, sessions, invitations, currentUser, joinSession, leaveSession, ready } =
+  const { getSession, getVenue, getUser, sessions, invitations, currentUser, joinSession, leaveSession, respondInvitation, ready } =
     useStore();
   const { t, formatDate, formatTHB } = useI18n();
   const club = useClub();
@@ -110,6 +110,9 @@ export default function SessionDetail() {
   const meIn = session.playerIds.includes(currentUser.id);
   const meWaitlisted = session.waitlistIds.includes(currentUser.id);
   const canChat = club.enabled && (meIn || meWaitlisted || session.creatorId === currentUser.id);
+  const myInvite = currentUser.id
+    ? invitations.find((i) => i.sessionId === session.id && i.toUserId === currentUser.id && i.status === 'pending')
+    : undefined;
   const openChat = async () => {
     setOpeningChat(true);
     const conv = await club.openSessionChat(session.id);
@@ -763,6 +766,62 @@ export default function SessionDetail() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* phones: the join button lives far down the page, so keep the main action pinned above the tab bar */}
+      {active && (
+        <>
+          <div className="h-24 lg:hidden" aria-hidden />
+          <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-30 border-t border-[#EADFC8] bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(11,46,43,.08)] backdrop-blur-[12px] lg:hidden">
+            <div className="mx-auto flex max-w-lg items-center gap-3">
+              <div className="min-w-0 flex-1 leading-tight">
+                <p className="font-display text-lg font-bold text-[#0B2E2B]">
+                  {formatTHB(session.pricePerPerson)}
+                  <span className="text-xs font-medium text-[#0B2E2B]/50"> {t('detail.action.perPerson')}</span>
+                </p>
+                <p className="truncate text-xs font-semibold text-[#0A6E64]">
+                  {count}/{session.quota} · {spotsLeft > 0 ? t('detail.spotsLeftLabel', { count: spotsLeft }) : t('status.full')}
+                </p>
+              </div>
+              {meIn || meWaitlisted ? (
+                canChat ? (
+                  <button
+                    onClick={() => void openChat()}
+                    disabled={openingChat}
+                    className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#0B2E2B] px-5 text-sm font-bold text-white disabled:opacity-60"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    {t('club.sessionChat')}
+                  </button>
+                ) : (
+                  <span className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full bg-[#22C55E]/12 px-5 text-sm font-bold text-[#15803D]">
+                    <Check className="h-4 w-4" strokeWidth={3} />
+                    {meIn ? t('detail.action.joined') : t('detail.action.onWaitlist')}
+                  </span>
+                )
+              ) : myInvite ? (
+                <button
+                  onClick={() => respondInvitation(myInvite.id, true)}
+                  className="h-12 shrink-0 rounded-full bg-golden-hour px-6 text-sm font-bold text-white shadow-coral active:scale-[0.98]"
+                >
+                  {t('detail.action.acceptInvite')}
+                </button>
+              ) : (
+                <button
+                  onClick={() => joinSession(session.id)}
+                  className={cn(
+                    'h-12 shrink-0 rounded-full px-6 text-sm font-bold active:scale-[0.98]',
+                    session.status === 'full'
+                      ? 'bg-[#FFB547] text-[#0B2E2B]'
+                      : 'bg-golden-hour text-white shadow-coral',
+                  )}
+                >
+                  {session.status === 'full' ? t('detail.action.waitlist') : t('detail.action.join')}
+                </button>
+              )}
+            </div>
+          </div>
+        </>
       )}
 
       <InviteModal session={session} open={inviteOpen} onClose={() => setInviteOpen(false)} />
