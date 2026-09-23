@@ -23,7 +23,7 @@ Public visé : voyageurs et résidents, d'où les 4 langues (FR, EN, RU, TH).
 | Application mobile (PWA) | ✅ Dans le code, active dès le déploiement |
 | Dépôt GitHub `friendplus-sport-phuket` | ✅ Arborescence reconstruite (branche `claude/reprise-projet-5kelx0`), build OK |
 | Projet Vercel + domaine `friendplussport.center` | ✅ Projet `friendplus-sport-phuket`, relié à Supabase (vérifié en ligne) |
-| SMTP (e-mails de connexion) | 🔄 Domaine Resend vérifié, clé « envoi seul » créée ; SMTP Supabase saisi mais identifiants refusés (535) au 1er essai, à revérifier |
+| SMTP (e-mails de connexion) | ✅ Resend branché (domaine vérifié, clé « envoi seul », expéditeur `noreply@friendplussport.center`), codes reçus et connexions OK |
 | Photo de profil | ✅ Stockage `avatars` + colonnes `avatar_path` / `avatar_color` (exécuté) |
 | Vraies salles partenaires | ⬜ À saisir (les 6 salles installées sont fictives) |
 
@@ -147,8 +147,8 @@ RLS active partout. Lecture publique pour `venues`, `sessions`, `session_players
 2. ~~Exécuter `schema.sql` et `club.sql`~~ ✅ (pg_cron actif, tâche toutes les 5 min)
 3. ~~Variables d'environnement Vercel~~ ✅ (noms en majuscules, voir section 2) : `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` (`VITE_ENABLE_GOOGLE` est facultatif).
 4. **Supabase → Authentication → URL Configuration** : Site URL `https://www.friendplussport.center`, Redirect URLs `https://www.friendplussport.center/**`.
-5. **Modèle d'e-mail Magic Link** : ajouter `{{ .Token }}` pour que le code à 6 chiffres apparaisse, sinon les joueurs ne reçoivent qu'un lien.
-6. **SMTP Resend** : obligatoire, l'envoi intégré de Supabase est limité à quelques e-mails par heure.
+5. ~~Modèle d'e-mail Magic Link~~ ✅ : ajouter `{{ .Token }}` pour que le code à 6 chiffres apparaisse, sinon les joueurs ne reçoivent qu'un lien.
+6. ~~SMTP Resend~~ ✅ : obligatoire, l'envoi intégré de Supabase est limité à quelques e-mails par heure.
    Enregistrements DNS à ajouter chez le gestionnaire du domaine :
    - TXT `resend._domainkey` → clé DKIM affichée dans Resend → Domains
    - MX `send` → `feedback-smtp.ap-northeast-1.amazonses.com` (priorité 10)
