@@ -4,7 +4,7 @@ import { BadgeCheck, PenLine } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useSocial, useMoments } from '@/lib/social';
 import { useClub, clubErrorKey } from '@/lib/club';
-import { setCertified } from '@/lib/news';
+import { setCertified } from '@/lib/posts';
 import CertifiedBadge from '@/components/CertifiedBadge';
 import { useI18n } from '@/lib/i18n';
 import PlayerAvatar from '@/components/PlayerAvatar';

@@ -13,12 +13,11 @@ import UserPickerModal from '@/components/club/UserPickerModal';
 import { ConversationAvatar, UnreadBadge } from '@/components/club/ClubUI';
 import { conversationTitle, useListTime } from '@/lib/club-format';
 import { SPORTS } from '@/lib/sports';
-import { useNews } from '@/lib/news';
-import NewsCard from '@/components/news/NewsCard';
-import NewsComposer from '@/components/news/NewsComposer';
+import { useFeedUnseen } from '@/lib/posts';
+import PagesFeed from '@/components/posts/PagesFeed';
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
-type Tab = 'chats' | 'news' | 'discover';
+type Tab = 'chats' | 'pages' | 'discover';
 type Filter = 'all' | 'group' | 'direct' | 'session';
 
 function ConversationRow({ c }: { c: Conversation }) {
@@ -64,9 +63,11 @@ function GroupCard({ g, onJoin }: { g: PublicGroup; onJoin: (id: string) => void
   return (
     <div className="flex flex-col rounded-[20px] border border-[#EADFC8] bg-white p-5 shadow-paper">
       <div className="flex items-center gap-3">
-        <ConversationAvatar kind="group" sport={g.sport} size={44} />
+        <ConversationAvatar kind="group" sport={g.sport} isPrivate={g.isPrivate} size={44} />
         <div className="min-w-0">
-          <p className="truncate font-display text-lg font-semibold text-[#0B2E2B]">{g.name}</p>
+          <p className="flex items-center gap-1.5 truncate font-display text-lg font-semibold text-[#0B2E2B]">
+            {g.isPrivate && <Lock className="h-4 w-4 shrink-0 text-[#FF6B4A]" aria-label={t('club.private')} />}{g.name}
+          </p>
           <p className="text-[13px] text-[#0B2E2B]/50">
             {g.sport ? `${t(`sport.${g.sport}`)} · ` : ''}
             {t(g.memberCount === 1 ? 'club.members.one' : 'club.members.other', { count: g.memberCount })}
@@ -98,11 +99,9 @@ export default function Club() {
   const [params, setParams] = useSearchParams();
   const { conversations, ready, createGroup, startDirect, joinGroup, discoverGroups } = useClub();
   const rawTab = params.get('tab');
-  const tab: Tab = rawTab === 'discover' || rawTab === 'news' ? rawTab : 'chats';
-  const news = useNews();
-  const { markSeen } = news;
-  useEffect(() => { if (tab === 'news' && !news.loading) markSeen(); }, [tab, news.loading, markSeen]);
-  const teaser = news.unseen > 0 ? news.items.find((a) => a.pinned) ?? news.items[0] : undefined;
+  const tab: Tab = rawTab === 'discover' || rawTab === 'pages' ? rawTab : 'chats';
+  const { unseen, markSeen } = useFeedUnseen();
+  useEffect(() => { if (tab === 'pages') markSeen(); }, [tab, markSeen]);
   const [filter, setFilter] = useState<Filter>('all');
   const [groupOpen, setGroupOpen] = useState(false);
   const [dmOpen, setDmOpen] = useState(false);
@@ -155,7 +154,7 @@ export default function Club() {
       <div className="container max-w-3xl py-8">
         <div className="flex flex-wrap items-center gap-3">
           <div className="inline-flex rounded-full border border-[#EADFC8] bg-white p-1">
-            {(['chats', 'news', 'discover'] as Tab[]).map((id) => (
+            {(['chats', 'pages', 'discover'] as Tab[]).map((id) => (
               <button
                 key={id}
                 onClick={() => setTab(id)}
@@ -165,7 +164,7 @@ export default function Club() {
                 )}
               >
                 {t(`club.tab.${id}`)}
-                {id === 'news' && news.unseen > 0 && tab !== 'news' && (
+                {id === 'pages' && unseen && tab !== 'pages' && (
                   <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-[#FF6B4A] ring-2 ring-white" aria-hidden />
                 )}
               </button>
@@ -190,34 +189,18 @@ export default function Club() {
           </div>
         </div>
 
-        {tab === 'news' ? (
-          <div className="mt-6 space-y-4">
-            {news.canPost
-              ? <NewsComposer isAdmin={news.isAdmin} onPost={news.post} />
-              : <p className="flex items-center gap-2 text-[13px] text-[#0B2E2B]/50"><Megaphone className="h-4 w-4 text-[#FF6B4A]" /> {t('news.whoCanPost')}</p>}
-            {news.loading ? (
-              <p className="py-16 text-center text-sm text-[#0B2E2B]/50">{t('common.loading')}</p>
-            ) : news.items.length === 0 ? (
-              <p className="rounded-[20px] border border-dashed border-[#EADFC8] px-6 py-12 text-center text-sm text-[#0B2E2B]/50">{t('news.empty')}</p>
-            ) : (
-              news.items.map((a) => (
-                <NewsCard key={a.id} item={a} isAdmin={news.isAdmin} onDelete={(x) => void news.remove(x)} onPin={(x, p) => void news.setPinned(x, p)} />
-              ))
-            )}
-          </div>
+        {tab === 'pages' ? (
+          <PagesFeed />
         ) : tab === 'chats' ? (
           <>
-            {teaser && (
+            {unseen && (
               <button
-                onClick={() => setTab('news')}
+                onClick={() => setTab('pages')}
                 className="mt-6 flex w-full items-center gap-3 rounded-[20px] border border-[#FFB547] bg-[#FFB547]/10 px-4 py-3 text-left"
               >
                 <Megaphone className="h-5 w-5 shrink-0 text-[#FF6B4A]" />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[11px] font-bold uppercase tracking-[0.14em] text-[#B97A0B]">{t('news.latest')}</span>
-                  <span className="block truncate text-sm font-bold text-[#0B2E2B]">{teaser.title}</span>
-                </span>
-                <span className="shrink-0 text-xs font-bold text-[#0A6E64]">{t('news.seeAll')} →</span>
+                <span className="min-w-0 flex-1 text-sm font-bold text-[#0B2E2B]">{t('pages.newPosts')}</span>
+                <span className="shrink-0 text-xs font-bold text-[#0A6E64]">{t('pages.see')} →</span>
               </button>
             )}
             <div className="-mx-4 mt-6 flex gap-2 overflow-x-auto px-4 pb-1">

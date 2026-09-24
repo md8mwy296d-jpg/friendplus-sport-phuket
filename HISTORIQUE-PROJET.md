@@ -26,7 +26,7 @@ Public visé : voyageurs et résidents, d'où les 4 langues (FR, EN, RU, TH).
 | SMTP (e-mails de connexion) | ✅ Resend branché (domaine vérifié, clé « envoi seul », expéditeur `noreply@friendplussport.center`), codes reçus et connexions OK |
 | Photo de profil | ✅ Stockage `avatars` + colonnes `avatar_path` / `avatar_color` (exécuté) |
 | Amis, moments, avis après match (`supabase/social.sql`) | ✅ Exécuté |
-| Nouveautés et comptes certifiés (`supabase/news.sql`) | ✅ Exécuté |
+| Pages, publications, certification (`supabase/pages.sql`) | ✅ Exécuté |
 | Vraies salles partenaires | ⬜ À saisir (les 7 lieux installés, dont le golf, sont fictifs) |
 
 ### ✅ Corrigé : aucune table n'était lisible (23 septembre 2026, soir)
@@ -51,6 +51,21 @@ non connectés. Parcours testé en base (profil, création de session padel, cha
   recadrée en carré 320 px côté navigateur puis envoyée dans le stockage public `avatars/<id joueur>/`.
   À défaut, 8 couleurs au choix, enregistrées en base (avant : dans le navigateur seulement).
   Visible partout où `PlayerAvatar` est utilisé (sessions, Club, invitations).
+
+### ✅ Club : Pages des terrains, publications, admin dans tous les groupes (24 septembre 2026)
+
+Nouveau fichier **`supabase/pages.sql`** (exécuté ; remplace `news.sql`, l'ancien onglet « Nouveautés » vide
+a été supprimé). Onglet **Pages** du Club :
+- **Patron de terrain** (compte **certifié** par l'admin) : crée la Page de son terrain (nom, sport, lieu
+  partenaire, présentation ; 3 Pages max) et y publie (titre, texte, photo, épingler).
+- **Admin** : publie au nom de FRIEND+, épingle, supprime tout, et **entre dans tous les groupes, y compris
+  privés** (visibles dans « Découvrir » avec un cadenas).
+- **Joueurs** : ne publient pas ; ils **aiment**, **commentent** et **envoient en privé** une publication
+  (message privé avec le lien `/publication/<id>`).
+- **Groupes** : onglet « Discussion | Publications » dans chaque groupe ; le créateur / admin du groupe publie,
+  les membres aiment et commentent. Invisible hors du groupe (sauf pour l'admin).
+- Tables `club_pages`, `posts`, `post_likes`, `post_comments` ; fonctions `save_page`, `publish_post`,
+  `set_post_pinned`, `toggle_post_like`, `add_post_comment` ; stockage public `posts` ; temps réel.
 
 ### ✅ Grades et médailles façon jeu vidéo (24 septembre 2026)
 
@@ -191,7 +206,7 @@ les 132 fichiers à plat à la racine du dépôt. L'arborescence a été reconst
 | `src/components/mobile/` | Barre d'onglets mobile, bannière « Installer l'app » |
 | `src/components/AvatarEditor.tsx`, `src/lib/avatar.ts` | Choix de la photo / couleur de profil |
 | `supabase/social.sql`, `src/lib/social.ts` | Amis, moments, fin de match, avis entre coéquipiers |
-| `supabase/news.sql`, `src/lib/news.ts`, `src/components/news/` | Nouveautés du Club, certification |
+| `supabase/pages.sql`, `src/lib/posts.ts`, `src/components/posts/` | Pages des terrains, publications, j'aime, commentaires, certification |
 | `src/lib/score.ts`, `src/components/ScoreBadge.tsx`, `src/components/social/ScorePanel.tsx` | Note FRIEND+ en % |
 | `src/lib/rank.ts`, `src/components/rank/` | Grades (insignes) et médailles |
 | `src/pages/PlayerProfile.tsx`, `src/components/social/` | Page publique d'un joueur, boutons ami / message, moments, bannière après-match |
