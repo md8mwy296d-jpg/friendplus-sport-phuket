@@ -9,6 +9,7 @@ import { useSocial } from '@/lib/social';
 import type { Lang } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import PlayerAvatar from './PlayerAvatar';
+import HeaderHub from './social/HeaderHub';
 import RankInsignia from './rank/RankInsignia';
 import { rankFor } from '@/lib/rank';
 
@@ -20,12 +21,12 @@ const NAV_LINKS = [
   { to: '/mes-sessions', key: 'nav.mySessions' },
 ];
 
-function Logo({ dark = false }: { dark?: boolean }) {
+function Logo({ dark = false, compact = false }: { dark?: boolean; compact?: boolean }) {
   const { t } = useI18n();
   return (
     <Link to="/" className="flex items-center gap-2.5">
       <img src="/logo.svg" alt="FRIEND+" className="h-9 w-9" />
-      <span className="leading-none">
+      <span className={cn('leading-none', compact && 'hidden sm:block')}>
         <span className={cn('font-display text-xl font-extrabold tracking-tight', dark ? 'text-white' : 'text-[#0B2E2B]')}>
           FRIEND
           <motion.span
@@ -119,7 +120,8 @@ function AvatarMenu({ dark = false }: { dark?: boolean }) {
   const { currentUser, pendingInvitesForMe, resetDemo } = useStore();
   const { incomingIds } = useSocial();
   const { t } = useI18n();
-  const alerts = pendingInvitesForMe.length + incomingIds.length;
+  // friend requests have their own icon in the header (HeaderHub)
+  const alerts = pendingInvitesForMe.length;
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -233,7 +235,8 @@ export default function Navbar() {
       )}
     >
       <div className="mx-auto flex h-[72px] max-w-[1280px] items-center gap-3 px-4 sm:gap-4 sm:px-6 lg:px-12">
-        <Logo dark={dark} />
+        {/* signed in on a phone, the wordmark gives way to the messages / groups / friends icons */}
+        <Logo dark={dark} compact={isAuthenticated} />
 
         {/* desktop links */}
         <nav className="ml-6 hidden items-center gap-1 lg:flex">
@@ -272,15 +275,16 @@ export default function Navbar() {
 
         <div className="ml-auto flex items-center gap-2 sm:gap-2.5">
           {/* on phones the language picker lives in the menu, leaving room for the account button */}
-          <div className="hidden sm:block">
+          <div className={isAuthenticated ? 'hidden lg:block' : 'hidden sm:block'}>
             <LanguageSelector dark={dark} />
           </div>
           <Link
             to="/creer"
-            className="hidden h-10 items-center rounded-full bg-[linear-gradient(135deg,#FF6B4A,#FFB547)] px-5 text-sm font-bold text-white shadow-[0_8px_24px_rgba(255,107,74,.35)] transition-transform hover:scale-[1.03] sm:inline-flex"
+            className={cn(isAuthenticated ? 'hidden lg:inline-flex' : 'hidden sm:inline-flex', 'h-10 items-center rounded-full bg-[linear-gradient(135deg,#FF6B4A,#FFB547)] px-5 text-sm font-bold text-white shadow-[0_8px_24px_rgba(255,107,74,.35)] transition-transform hover:scale-[1.03]')}
           >
             {t('nav.ctaCreate')}
           </Link>
+          {isAuthenticated && <HeaderHub dark={dark} />}
           <div>
             {isAuthenticated ? (
               <AvatarMenu dark={dark} />

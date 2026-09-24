@@ -3,6 +3,12 @@ import type { Dict } from './i18n';
 /** Strings for friends, player pages, shared moments and the after-match prompt. */
 export const SOCIAL_DICTS: Record<'fr' | 'en' | 'ru' | 'th', Dict> = {
   fr: {
+    'hub.groups': 'Groupes et matchs',
+    'hub.seeAllMessages': 'Voir tous les messages',
+    'hub.seeAllGroups': 'Voir tous les groupes',
+    'hub.seeAllFriends': 'Voir tous mes amis',
+    'hub.noMessages': 'Aucun message privé pour l’instant',
+    'hub.noGroups': 'Tu n’as pas encore rejoint de groupe',
     'owner.tag': 'OWNER',
     'owner.label': 'Propriétaire de salle — badge réservé aux patrons de terrains partenaires',
     'presence.online': 'En ligne',
@@ -195,6 +201,12 @@ export const SOCIAL_DICTS: Record<'fr' | 'en' | 'ru' | 'th', Dict> = {
     'club.err.session_closed': 'Ce n’est plus possible pour cette session.',
   },
   en: {
+    'hub.groups': 'Groups & matches',
+    'hub.seeAllMessages': 'See all messages',
+    'hub.seeAllGroups': 'See all groups',
+    'hub.seeAllFriends': 'See all my friends',
+    'hub.noMessages': 'No private messages yet',
+    'hub.noGroups': 'You haven’t joined a group yet',
     'owner.tag': 'OWNER',
     'owner.label': 'Venue owner — badge reserved for partner venue owners',
     'presence.online': 'Online',
@@ -387,6 +399,12 @@ export const SOCIAL_DICTS: Record<'fr' | 'en' | 'ru' | 'th', Dict> = {
     'club.err.session_closed': 'This is no longer possible for this session.',
   },
   ru: {
+    'hub.groups': 'Группы и матчи',
+    'hub.seeAllMessages': 'Все сообщения',
+    'hub.seeAllGroups': 'Все группы',
+    'hub.seeAllFriends': 'Все мои друзья',
+    'hub.noMessages': 'Личных сообщений пока нет',
+    'hub.noGroups': 'Вы ещё не вступили ни в одну группу',
     'owner.tag': 'OWNER',
     'owner.label': 'Владелец площадки — значок только для владельцев площадок-партнёров',
     'presence.online': 'В сети',
@@ -579,6 +597,12 @@ export const SOCIAL_DICTS: Record<'fr' | 'en' | 'ru' | 'th', Dict> = {
     'club.err.session_closed': 'Для этой сессии это уже невозможно.',
   },
   th: {
+    'hub.groups': 'กลุ่มและแมตช์',
+    'hub.seeAllMessages': 'ดูข้อความทั้งหมด',
+    'hub.seeAllGroups': 'ดูกลุ่มทั้งหมด',
+    'hub.seeAllFriends': 'ดูเพื่อนทั้งหมด',
+    'hub.noMessages': 'ยังไม่มีข้อความส่วนตัว',
+    'hub.noGroups': 'คุณยังไม่ได้เข้าร่วมกลุ่ม',
     'owner.tag': 'OWNER',
     'owner.label': 'เจ้าของสนาม — ตราสำหรับเจ้าของสนามพันธมิตรเท่านั้น',
     'presence.online': 'ออนไลน์',

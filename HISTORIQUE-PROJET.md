@@ -142,6 +142,18 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Barre façon Facebook : messages, groupes, amis (24 septembre 2026)
+
+- `components/social/HeaderHub.tsx`, dans la barre du haut pour un joueur connecté, sur toutes les pages.
+  Trois icônes rondes, chacune avec sa pastille rouge :
+  - 💬 **Messages privés** (nombre de discussions non lues) : amis en ligne en haut, puis les discussions
+    (aperçu, heure, point vert si non lu), « Voir tous les messages » → `/club?f=direct`.
+  - 👥 **Groupes et matchs** (groupes et discussions de session non lus) → `/club?f=group`, « + » pour découvrir.
+  - 👤+ **Mes amis** (demandes reçues) : accepter ou refuser directement, amis en ligne, « Voir tous mes amis ».
+- Sur téléphone, le menu s'ouvre en panneau pleine largeur sous la barre, et le logo perd son texte pour
+  faire de la place. Le sélecteur de langue et « Créer » passent au menu ☰ / à la barre du bas sous 1024 px.
+- La pastille de l'avatar ne compte plus que les invitations aux sessions (les demandes d'ami ont leur icône).
+
 ### ✅ Badge « OWNER » des patrons de salles (24 septembre 2026)
 
 - Étiquette dorée **OWNER** avec une couronne, à côté du nom (`CertifiedBadge owner`) : page joueur, amis,
