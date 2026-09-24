@@ -52,8 +52,8 @@ export default function SportsTiles() {
           {SPORTS.map((sport, i) => (
             <motion.div
               key={sport}
-              // odd count: the last tile spans the full row
-              className={i === SPORTS.length - 1 && SPORTS.length % 2 === 1 ? 'md:col-span-2' : undefined}
+              // odd count: the first tile (padel, the featured sport) spans the full row
+              className={i === 0 && SPORTS.length % 2 === 1 ? 'md:col-span-2' : undefined}
               initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.25 }}

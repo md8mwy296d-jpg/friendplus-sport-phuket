@@ -6,7 +6,7 @@ import StatusBadge from '@/components/StatusBadge';
 import { sportPhoto } from '@/lib/sportPhotos';
 
 // new photos every week
-const STEP_IMAGES = [sportPhoto('futsal', 'how'), sportPhoto('padel', 'how'), sportPhoto('dance', 'how')];
+const STEP_IMAGES = [sportPhoto('padel', 'how'), sportPhoto('futsal', 'how'), sportPhoto('dance', 'how')];
 
 /** Step 4: the "confirmed" card shown instead of a photo. */
 function ConfirmedVisual({ n }: { n: string }) {

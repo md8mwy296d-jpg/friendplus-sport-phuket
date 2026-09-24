@@ -142,6 +142,12 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Padel mis en avant (24 septembre 2026)
+
+- Le padel passe en premier dans la liste des sports (`SPORTS` dans `src/lib/sports.ts`) : accueil, filtres, création de session, profil.
+- Sur l'accueil, la tuile padel est en grand, sur toute la largeur. C'est aussi la première image de la section « Le concept ».
+- Réseaux sociaux (Metricool) : la publication padel sort en premier (samedi 26 septembre).
+
 ### ✅ Référencement Google (24 septembre 2026)
 
 - Ajout de `public/robots.txt` et `public/sitemap.xml` (accueil, explorer, salles, club, connexion ; pages privées exclues).

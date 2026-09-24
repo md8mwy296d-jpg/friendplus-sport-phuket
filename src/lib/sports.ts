@@ -1,7 +1,7 @@
 import type { Sport } from './types';
 
 /** Every sport offered by FRIEND+, in display order. */
-export const SPORTS: Sport[] = ['futsal', 'padel', 'golf', 'dance', 'gym'];
+export const SPORTS: Sport[] = ['padel', 'futsal', 'golf', 'dance', 'gym'];
 
 /** Sports played with a set number of players (the organiser cannot change it). */
 export const FIXED_QUOTA: Partial<Record<Sport, number>> = { futsal: 10, padel: 4, golf: 4 };
