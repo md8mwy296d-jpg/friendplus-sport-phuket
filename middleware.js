@@ -59,5 +59,5 @@ export default async function middleware(request) {
     });
   }
   // continue to the site; the header shows the guard ran
-  return next({ headers: { 'x-fp-guard': '1', 'x-fp-seen': ip || 'none' } });
+  return next({ headers: { 'x-fp-guard': '1' } });
 }
