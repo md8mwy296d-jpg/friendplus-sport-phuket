@@ -15,12 +15,12 @@ import PageFormModal from './PageFormModal';
 type Selected = 'all' | 'official' | string;
 
 /** Club "Pages" tab: FRIEND+ news and the Pages of partner venues. Players like, comment and forward. */
-export default function PagesFeed() {
+export default function PagesFeed({ initialPage }: { initialPage?: string | null }) {
   const { currentUser, getUser, getVenue } = useStore();
   const { isAppAdmin } = useClub();
   const { t } = useI18n();
   const { pages, save, remove } = useClubPages();
-  const [selected, setSelected] = useState<Selected>('all');
+  const [selected, setSelected] = useState<Selected>(initialPage || 'all');
   const [form, setForm] = useState<{ open: boolean; page?: ClubPage }>({ open: false });
 
   const page = pages.find((p) => p.id === selected);

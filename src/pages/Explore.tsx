@@ -10,6 +10,7 @@ import SessionCard from '@/components/SessionCard';
 import SportIcon from '@/components/SportIcon';
 import CountUp from '@/components/home/CountUp';
 import { SPORTS } from '@/lib/sports';
+import QuickAccess from '@/components/social/QuickAccess';
 import {
   Select,
   SelectContent,
@@ -242,6 +243,8 @@ export default function Explore() {
           </p>
         </div>
       </motion.section>
+
+      <div className="container pt-6 empty:hidden"><QuickAccess /></div>
 
       {/* Section 2 — sticky filter bar */}
       <div

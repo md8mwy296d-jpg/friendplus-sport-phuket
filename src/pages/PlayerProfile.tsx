@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { BadgeCheck, PenLine } from 'lucide-react';
 import { useStore } from '@/lib/store';
-import { useSocial, useMoments } from '@/lib/social';
+import { presenceLabel, useSocial, useMoments } from '@/lib/social';
 import { useClub, clubErrorKey } from '@/lib/club';
 import { setCertified } from '@/lib/posts';
 import CertifiedBadge from '@/components/CertifiedBadge';
 import { useI18n } from '@/lib/i18n';
-import PlayerAvatar from '@/components/PlayerAvatar';
+import PresenceAvatar from '@/components/social/PresenceAvatar';
 import SportIcon from '@/components/SportIcon';
 import EmptyState from '@/components/EmptyState';
 import { FriendButton, MessageButton } from '@/components/social/FriendButton';
@@ -25,7 +25,7 @@ export default function PlayerProfile() {
   const { getUser, currentUser, sessions, ready, isAuthenticated, refresh, pushToast } = useStore();
   const { isAppAdmin } = useClub();
   const [certBusy, setCertBusy] = useState(false);
-  const { statusWith } = useSocial();
+  const { statusWith, isOnline, lastSeenOf } = useSocial();
   const { t } = useI18n();
   const player = getUser(id);
   const isMe = Boolean(currentUser.id) && currentUser.id === id;
@@ -72,7 +72,7 @@ export default function PlayerProfile() {
     <div className="bg-[#FBF6EC] pb-16">
       <section className="bg-lagoon-deep px-4 pb-24 pt-10 sm:px-6">
         <div className="mx-auto flex max-w-[760px] flex-col items-center text-center">
-          <PlayerAvatar user={player} size={112} ring={false} className="font-display text-4xl font-bold ring-4 ring-white/30" />
+          <PresenceAvatar userId={player.id} user={player} size={112} ring={false} className="font-display text-4xl font-bold ring-4 ring-white/30" />
           <h1 className="mt-4 font-display text-[clamp(1.8rem,6vw,2.4rem)] font-bold leading-tight text-white">
             {player.name} <CertifiedBadge certified={player.certified} /> <span className="align-middle text-2xl">{player.nationality}</span>
             <RankInsignia rank={rankFor(player.score)} size={30} className="ml-2 align-middle" />
@@ -80,6 +80,14 @@ export default function PlayerProfile() {
           <p className="mt-1 text-sm text-white/65">
             {t(`rank.${rankFor(player.score).key}`)} · {t(`common.level.${player.level}`)} · {player.score === null ? t('score.new') : `${t('score.short')} ${player.score} %`}
           </p>
+          {status === 'friends' && (
+            <p className={isOnline(player.id)
+              ? 'mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#22C55E]/20 px-3 py-1 text-xs font-bold text-[#86EFAC]'
+              : 'mt-2 text-xs text-white/55'}>
+              {isOnline(player.id) && <span className="h-2 w-2 rounded-full bg-[#22C55E]" />}
+              {presenceLabel(t, isOnline(player.id), lastSeenOf(player.id))}
+            </p>
+          )}
           {player.sports.length > 0 && (
             <div className="mt-4 flex flex-wrap justify-center gap-2" aria-label={t('player.sports')}>
               {player.sports.map((s) => (

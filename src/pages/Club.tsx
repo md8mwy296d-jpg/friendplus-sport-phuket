@@ -15,6 +15,7 @@ import { conversationTitle, useListTime } from '@/lib/club-format';
 import { SPORTS } from '@/lib/sports';
 import { useFeedUnseen } from '@/lib/posts';
 import PagesFeed from '@/components/posts/PagesFeed';
+import QuickAccess from '@/components/social/QuickAccess';
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 type Tab = 'chats' | 'pages' | 'discover';
@@ -38,7 +39,7 @@ function ConversationRow({ c }: { c: Conversation }) {
       to={`/club/${c.id}`}
       className="flex items-center gap-3.5 rounded-[20px] px-3 py-3 transition-colors hover:bg-white"
     >
-      <ConversationAvatar kind={c.kind} sport={c.sport} other={other} isPrivate={c.kind === 'group' && c.isPrivate} />
+      <ConversationAvatar kind={c.kind} sport={c.sport} other={other} otherId={c.otherUserId ?? undefined} isPrivate={c.kind === 'group' && c.isPrivate} />
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline gap-2">
           <span className={cn('truncate text-[15px] text-[#0B2E2B]', c.unread > 0 ? 'font-bold' : 'font-semibold')}>{title}</span>
@@ -102,7 +103,13 @@ export default function Club() {
   const tab: Tab = rawTab === 'discover' || rawTab === 'pages' ? rawTab : 'chats';
   const { unseen, markSeen } = useFeedUnseen();
   useEffect(() => { if (tab === 'pages') markSeen(); }, [tab, markSeen]);
-  const [filter, setFilter] = useState<Filter>('all');
+  const rawFilter = params.get('f');
+  const [filter, setFilter] = useState<Filter>(
+    rawFilter === 'group' || rawFilter === 'direct' || rawFilter === 'session' ? rawFilter : 'all',
+  );
+  useEffect(() => {
+    if (rawFilter === 'group' || rawFilter === 'direct' || rawFilter === 'session') setFilter(rawFilter);
+  }, [rawFilter]);
   const [groupOpen, setGroupOpen] = useState(false);
   const [dmOpen, setDmOpen] = useState(false);
   const [groups, setGroups] = useState<PublicGroup[] | null>(null);
@@ -152,6 +159,7 @@ export default function Club() {
       </motion.section>
 
       <div className="container max-w-3xl py-8">
+        <QuickAccess className="mb-6" />
         <div className="flex flex-wrap items-center gap-3">
           <div className="inline-flex rounded-full border border-[#EADFC8] bg-white p-1">
             {(['chats', 'pages', 'discover'] as Tab[]).map((id) => (
@@ -190,7 +198,7 @@ export default function Club() {
         </div>
 
         {tab === 'pages' ? (
-          <PagesFeed />
+          <PagesFeed key={params.get('page') ?? 'all'} initialPage={params.get('page')} />
         ) : tab === 'chats' ? (
           <>
             {unseen && (

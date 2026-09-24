@@ -6,6 +6,7 @@ import type { Sport, User } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import SportIcon from '@/components/SportIcon';
+import PresenceAvatar from '@/components/social/PresenceAvatar';
 import PlayerAvatar from '@/components/PlayerAvatar';
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -112,15 +113,21 @@ const KIND_STYLE: Record<ConversationKind, string> = {
 
 /** Round avatar for a conversation: the other player for private chats, a sport badge otherwise. */
 export function ConversationAvatar({
-  kind, sport, other, isPrivate = false, size = 48,
+  kind, sport, other, otherId, isPrivate = false, size = 48,
 }: {
   kind: ConversationKind;
   sport: Sport | null;
   other?: Pick<User, 'name' | 'nationality'>;
+  /** Other player of a direct chat: shows the green "online" dot for a friend. */
+  otherId?: string;
   isPrivate?: boolean;
   size?: number;
 }) {
-  if (kind === 'direct' && other) return <PlayerAvatar user={other} size={size} ring={false} />;
+  if (kind === 'direct' && other) {
+    return otherId
+      ? <PresenceAvatar userId={otherId} user={other} size={size} ring={false} />
+      : <PlayerAvatar user={other} size={size} ring={false} />;
+  }
   return (
     <span
       className={cn('relative inline-flex shrink-0 items-center justify-center rounded-full text-white', KIND_STYLE[kind])}
