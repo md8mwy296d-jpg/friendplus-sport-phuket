@@ -142,6 +142,12 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Référencement Google (24 septembre 2026)
+
+- Ajout de `public/robots.txt` et `public/sitemap.xml` (accueil, explorer, salles, club, connexion ; pages privées exclues).
+- `index.html` : titre avec les mots-clés (futsal, padel, golf, Phuket), description, adresse canonique, balises de partage (Open Graph, Twitter), données structurées `WebSite` pour Google, et un petit texte lisible sans JavaScript.
+- **À faire par le propriétaire** : déclarer le site dans Google Search Console et envoyer le sitemap. Un site tout neuf met en général quelques jours à quelques semaines à apparaître dans Google.
+
 ### ✅ Sécurité renforcée (24 septembre 2026)
 
 - **Contrôle complet** : aucune clé secrète (`service_role`) dans le code ni dans l'historique Git. Toutes les tables ont la sécurité par ligne (RLS) activée, et les fonctions sensibles (certifier, modérer, publier…) vérifient qui appelle.
