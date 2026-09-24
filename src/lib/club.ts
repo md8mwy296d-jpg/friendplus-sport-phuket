@@ -127,7 +127,7 @@ const toInfo = (r: Row): ConversationInfo => ({
 
 const CLUB_ERRORS = [
   'not_member', 'blocked', 'banned', 'group_full', 'too_many_groups', 'rate_limited', 'not_allowed',
-  'invalid_input', 'not_found', 'profile_incomplete', 'not_authenticated',
+  'invalid_input', 'not_found', 'profile_incomplete', 'not_authenticated', 'session_closed',
 ];
 
 export function clubErrorKey(err: unknown): string {

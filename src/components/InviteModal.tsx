@@ -35,7 +35,7 @@ export default function InviteModal({ session, open, onClose }: InviteModalProps
       .sort((a, b) => {
         const aSport = a.sports.includes(session.sport) ? 0 : 1;
         const bSport = b.sports.includes(session.sport) ? 0 : 1;
-        return aSport - bSport || b.rating - a.rating;
+        return aSport - bSport || (b.score ?? -1) - (a.score ?? -1);
       });
   }, [users, currentUser.id, session, invitations, query]);
 

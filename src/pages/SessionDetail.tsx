@@ -30,6 +30,8 @@ import AfterMatch from '@/components/social/AfterMatch';
 import { sessionEnded } from '@/lib/social';
 import SessionCard from '@/components/SessionCard';
 import EmptyState from '@/components/EmptyState';
+import CertifiedBadge from '@/components/CertifiedBadge';
+import ScoreBadge from '@/components/ScoreBadge';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
@@ -479,10 +481,11 @@ export default function SessionDetail() {
                       <Link to={`/joueur/${u.id}`} className="flex max-w-full flex-col items-center gap-1.5">
                         <PlayerAvatar user={u} size={64} />
                         <p className="max-w-full truncate text-[13px] font-semibold text-[#0B2E2B]">
-                          {u.name.split(' ')[0]} <span aria-hidden>{u.nationality}</span>
+                          {u.name.split(' ')[0]} <CertifiedBadge certified={u.certified} /> <span aria-hidden>{u.nationality}</span>
                         </p>
                       </Link>
                       <p className="text-[11px] text-[#0B2E2B]/50">{t(`common.level.${u.level}`)}</p>
+                      <ScoreBadge user={u} />
                       {club.enabled && u.id !== currentUser.id && (
                         <button
                           type="button"

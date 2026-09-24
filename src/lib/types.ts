@@ -20,6 +20,15 @@ export interface User {
   avatarUrl: string;
   /** Index in the avatar gradient palette chosen by the player, null = derived from the name. */
   avatarColor: number | null;
+  /** Verified account (badge ✓), granted by a FRIEND+ admin. */
+  certified: boolean;
+  /** % of "yes" answers from teammates (rules + respect), null until the first review. */
+  fairplayPct: number | null;
+  /** 10 % per match played, capped at 100 %. */
+  activityPct: number;
+  /** FRIEND+ score: 70 % fair-play + 30 % activity, null until the first review. */
+  score: number | null;
+  reviewCount: number;
 }
 
 export interface Venue {

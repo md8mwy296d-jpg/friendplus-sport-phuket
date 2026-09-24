@@ -327,7 +327,7 @@ export default function CreateSession() {
     .sort((a, b) => {
       const as = draft.sport && a.sports.includes(draft.sport) ? 0 : 1;
       const bs = draft.sport && b.sports.includes(draft.sport) ? 0 : 1;
-      return as - bs || b.rating - a.rating;
+      return as - bs || (b.score ?? -1) - (a.score ?? -1);
     }),
   [users, currentUser.id, playerQuery, onlySportFans, draft.sport]);
 

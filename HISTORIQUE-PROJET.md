@@ -25,7 +25,8 @@ Public visé : voyageurs et résidents, d'où les 4 langues (FR, EN, RU, TH).
 | Projet Vercel + domaine `friendplussport.center` | ✅ Projet `friendplus-sport-phuket`, relié à Supabase (vérifié en ligne) |
 | SMTP (e-mails de connexion) | ✅ Resend branché (domaine vérifié, clé « envoi seul », expéditeur `noreply@friendplussport.center`), codes reçus et connexions OK |
 | Photo de profil | ✅ Stockage `avatars` + colonnes `avatar_path` / `avatar_color` (exécuté) |
-| Amis, moments (`supabase/social.sql`) | ✅ Exécuté |
+| Amis, moments, avis après match (`supabase/social.sql`) | ✅ Exécuté |
+| Nouveautés et comptes certifiés (`supabase/news.sql`) | ✅ Exécuté |
 | Vraies salles partenaires | ⬜ À saisir (les 7 lieux installés, dont le golf, sont fictifs) |
 
 ### ✅ Corrigé : aucune table n'était lisible (23 septembre 2026, soir)
@@ -50,6 +51,25 @@ non connectés. Parcours testé en base (profil, création de session padel, cha
   recadrée en carré 320 px côté navigateur puis envoyée dans le stockage public `avatars/<id joueur>/`.
   À défaut, 8 couleurs au choix, enregistrées en base (avant : dans le navigateur seulement).
   Visible partout où `PlayerAvatar` est utilisé (sessions, Club, invitations).
+
+### ✅ Nouveautés du Club, comptes certifiés et Note FRIEND+ (24 septembre 2026)
+
+**Nouveautés** (`supabase/news.sql`, exécuté) : onglet « Nouveautés » du Club. Seuls les **admins** (table
+`app_admins`) et les **comptes certifiés** publient (titre, texte, photo). Un admin peut épingler ; ses
+publications sont signées « Équipe FRIEND+ ». Pastille sur l'onglet et aperçu dans « Discussions » quand il y a
+du nouveau. Stockage public `news`. 10 publications par jour maximum.
+
+**Comptes certifiés** : colonne `profiles.certified`, badge bleu ✓ à côté du nom (page joueur, équipe d'une
+session, après-match, amis, nouveautés). Un admin certifie ou retire la certification depuis la page du joueur
+(bouton visible uniquement pour les admins). Personne ne peut se certifier soi-même.
+
+**Note FRIEND+ en %** (remplace les étoiles figées à 5,0) :
+- Après un match terminé (pendant 7 jours), chaque joueur note anonymement ses coéquipiers :
+  « A respecté les règles du jeu ? » et « A respecté les autres joueurs ? » (oui / non, modifiable).
+- **Fair-play** = % de « oui » reçus ; **Activité** = 10 % par match joué (100 % dès 10 matchs).
+- **Note** = 70 % fair-play + 30 % activité, calculée par la base (`public_profiles`), affichée « Nouveau »
+  tant qu'aucun avis n'est reçu. Table `match_reviews` + fonction `review_teammate()` dans `social.sql` ;
+  nul ne voit qui l'a noté, nul ne peut modifier sa propre note.
 
 ### ✅ Amis, pages joueurs, moments et « après-match » (23 septembre 2026, soir)
 
@@ -157,7 +177,9 @@ les 132 fichiers à plat à la racine du dépôt. L'arborescence a été reconst
 | `src/pages/Club.tsx`, `src/pages/Conversation.tsx` | Liste des discussions / découverte des groupes, écran de discussion |
 | `src/components/mobile/` | Barre d'onglets mobile, bannière « Installer l'app » |
 | `src/components/AvatarEditor.tsx`, `src/lib/avatar.ts` | Choix de la photo / couleur de profil |
-| `supabase/social.sql`, `src/lib/social.ts` | Amis, moments, fin de match |
+| `supabase/social.sql`, `src/lib/social.ts` | Amis, moments, fin de match, avis entre coéquipiers |
+| `supabase/news.sql`, `src/lib/news.ts`, `src/components/news/` | Nouveautés du Club, certification |
+| `src/lib/score.ts`, `src/components/ScoreBadge.tsx`, `src/components/social/ScorePanel.tsx` | Note FRIEND+ en % |
 | `src/pages/PlayerProfile.tsx`, `src/components/social/` | Page publique d'un joueur, boutons ami / message, moments, bannière après-match |
 | `src/lib/sports.ts` | Liste des sports, joueurs par sport, durées, calcul des prix |
 | `DEPLOIEMENT.md` | Guide de mise en ligne pas à pas |

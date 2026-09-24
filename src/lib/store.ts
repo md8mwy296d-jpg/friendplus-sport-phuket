@@ -125,6 +125,11 @@ function toUser(r: Row): User {
     organizedCount: r.organized_count ?? 0,
     avatarUrl: r.avatar_path ? supabase.storage.from(AVATAR_BUCKET).getPublicUrl(r.avatar_path).data.publicUrl : '',
     avatarColor: r.avatar_color ?? null,
+    certified: Boolean(r.certified),
+    fairplayPct: r.fairplay_pct ?? null,
+    activityPct: r.activity_pct ?? 0,
+    score: r.score ?? null,
+    reviewCount: r.review_count ?? 0,
   };
 }
 
@@ -193,6 +198,11 @@ const GUEST: User = {
   organizedCount: 0,
   avatarUrl: '',
   avatarColor: null,
+  certified: false,
+  fairplayPct: null,
+  activityPct: 0,
+  score: null,
+  reviewCount: 0,
 };
 
 const KNOWN_ERRORS = [
