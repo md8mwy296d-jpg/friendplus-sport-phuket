@@ -26,9 +26,11 @@ export interface User {
   fairplayPct: number | null;
   /** 10 % per match played, capped at 100 %. */
   activityPct: number;
-  /** FRIEND+ score: 70 % fair-play + 30 % activity, null until the first review. */
+  /** FRIEND+ score out of 100: complete profile 15 + fair-play 60 + activity 25. */
   score: number | null;
   reviewCount: number;
+  /** 25 % each: name, photo, country, sports wished. */
+  profilePct: number;
 }
 
 export interface Venue {
