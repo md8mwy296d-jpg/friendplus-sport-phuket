@@ -6,6 +6,7 @@ import Lenis from 'lenis'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import RequireAuth from './components/RequireAuth'
+import { countVisit } from './lib/visits'
 
 // L'accueil reste dans le bundle principal ; les autres pages sont chargées à la demande.
 const Explore = lazy(() => import('./pages/Explore'))
@@ -41,6 +42,7 @@ function useSmoothScroll() {
 
 export default function App() {
   useSmoothScroll()
+  useEffect(countVisit, [])
   return (
     <Routes>
       <Route element={<Layout />}>

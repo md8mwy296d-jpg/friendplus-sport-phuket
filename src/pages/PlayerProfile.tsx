@@ -7,6 +7,7 @@ import { handleOf } from '@/lib/players';
 import { useClub, clubErrorKey } from '@/lib/club';
 import { setCertified } from '@/lib/posts';
 import CertifiedBadge from '@/components/CertifiedBadge';
+import ModerationPanel from '@/components/admin/ModerationPanel';
 import { useI18n } from '@/lib/i18n';
 import PresenceAvatar from '@/components/social/PresenceAvatar';
 import SportIcon from '@/components/SportIcon';
@@ -141,6 +142,7 @@ export default function PlayerProfile() {
               </button>
             </div>
           )}
+          {isAppAdmin && !isMe && !player.isAdmin && <ModerationPanel userId={player.id} name={player.name} />}
           {!isAuthenticated && (
             <p className="mt-3 text-center text-xs text-[#0B2E2B]/50">{t('player.loginToConnect', { name: player.name.split(' ')[0] })}</p>
           )}

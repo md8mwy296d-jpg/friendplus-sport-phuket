@@ -142,6 +142,18 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Visites par ville et modération (IP, suspension) (25 septembre 2026)
+
+- **Visites par ville** (admin seulement, page Profil) : compteur anonyme par jour, pays et ville (`public.visit_stats`, `supabase/visits.sql`). La ville vient des en-têtes géo de Vercel, lus par `api/hit.js`, appelé une fois par session de navigation. Aucune IP ni aucun identifiant n'est enregistré.
+  - La fonction a besoin de la variable Vercel **`VISIT_SECRET`**, qui doit avoir la même valeur que `public.visit_secret` dans Supabase. Sans elle, rien n'est compté.
+- **Modération** (admin seulement, page d'un joueur) :
+  - voir les adresses IP récentes du joueur, lues dans `auth.sessions`, que Supabase conserve déjà ;
+  - suspendre son compte 7 jours, 30 jours ou définitivement (`auth.users.banned_until`, déconnexion partout), puis le réactiver ;
+  - bloquer ou débloquer une IP.
+  - Les IP bloquées (`public.blocked_ips`) ne peuvent plus ouvrir le site : `middleware.js` sur Vercel, qui laisse passer si Supabase ne répond pas. La liste complète se gère depuis le Profil admin.
+  - L'admin ne peut ni se suspendre lui-même ni bloquer sa propre IP.
+- **À faire** : mentionner dans la politique de confidentialité que l'adresse IP est conservée pour la sécurité et la modération. C'est obligatoire (PDPA/RGPD).
+
 ### ✅ Padel mis en avant (24 septembre 2026)
 
 - Le padel passe en premier dans la liste des sports (`SPORTS` dans `src/lib/sports.ts`) : accueil, filtres, création de session, profil.
