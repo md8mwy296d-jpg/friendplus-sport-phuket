@@ -36,6 +36,8 @@ export interface PublicGroup {
   lastMessageAt: string;
   createdAt: string;
   isMember: boolean;
+  /** Only returned to site admins, who can enter private groups. */
+  isPrivate: boolean;
 }
 
 export interface Message {
@@ -102,6 +104,7 @@ const toPublicGroup = (r: Row): PublicGroup => ({
   lastMessageAt: r.last_message_at,
   createdAt: r.created_at,
   isMember: Boolean(r.is_member),
+  isPrivate: Boolean(r.is_private),
 });
 
 export const toMessage = (r: Row): Message => ({

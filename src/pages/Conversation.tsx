@@ -15,6 +15,7 @@ import PlayerAvatar from '@/components/PlayerAvatar';
 import GroupFormModal from '@/components/club/GroupFormModal';
 import UserPickerModal from '@/components/club/UserPickerModal';
 import { ConfirmModal, ConversationAvatar, Modal } from '@/components/club/ClubUI';
+import GroupPosts from '@/components/posts/GroupPosts';
 import { conversationTitle, isSameDay } from '@/lib/club-format';
 
 type Confirm = { title: string; body?: string; label?: string; danger?: boolean; run: () => void } | null;
@@ -76,6 +77,7 @@ function ConversationView({ id }: { id: string | undefined }) {
   const [reportTarget, setReportTarget] = useState<{ messageId?: string; userId?: string } | null>(null);
   const [reportReason, setReportReason] = useState('');
   const [confirm, setConfirm] = useState<Confirm>(null);
+  const [view, setView] = useState<'chat' | 'posts'>('chat');
 
   const listRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -262,6 +264,30 @@ function ConversationView({ id }: { id: string | undefined }) {
         </div>
       </div>
 
+      {info.kind === 'group' && isMember && (
+        <div className="border-b border-[#EADFC8] bg-white/70">
+          <div className="mx-auto flex max-w-3xl gap-1 px-3 py-2 sm:px-6">
+            {(['chat', 'posts'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={view === v
+                  ? 'h-9 rounded-full bg-[#0E8C7F] px-4 text-sm font-bold text-white'
+                  : 'h-9 rounded-full px-4 text-sm font-bold text-[#0B2E2B]/60 hover:text-[#0B2E2B]'}
+              >
+                {t(v === 'chat' ? 'posts.tab.chat' : 'posts.tab.posts')}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {info.kind === 'group' && isMember && view === 'posts' ? (
+        <div data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <GroupPosts groupId={id} canPublish={isAdmin} />
+        </div>
+      ) : (
+      <>
       {/* messages */}
       <div ref={listRef} onScroll={onScroll} data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div className="mx-auto flex max-w-3xl flex-col px-3 py-4 sm:px-6">
@@ -362,8 +388,11 @@ function ConversationView({ id }: { id: string | undefined }) {
         </div>
       </div>
 
+      </>
+      )}
+
       {/* composer */}
-      {isMember && (
+      {isMember && view === 'chat' && (
         <div className="border-t border-[#EADFC8] bg-white pb-[env(safe-area-inset-bottom)]">
           {blockedOther ? (
             <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-4 text-sm text-[#0B2E2B]/60">

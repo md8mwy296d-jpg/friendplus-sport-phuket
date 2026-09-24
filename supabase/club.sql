@@ -210,18 +210,21 @@ returns table (
 $$;
 
 -- Groupes publics à découvrir
+-- L'admin du site voit aussi les groupes privés
+drop function if exists public.discover_groups();
 create or replace function public.discover_groups()
 returns table (
   id uuid, name text, description text, sport text, member_count integer,
-  last_message_at timestamptz, created_at timestamptz, is_member boolean
+  last_message_at timestamptz, created_at timestamptz, is_member boolean, is_private boolean
 ) language sql stable security definer set search_path = public as $$
   select c.id, c.name, c.description, c.sport,
          (select count(*) from public.conversation_members y where y.conversation_id = c.id)::int,
          c.last_message_at, c.created_at,
          exists (select 1 from public.conversation_members y
-                  where y.conversation_id = c.id and y.user_id = auth.uid())
+                  where y.conversation_id = c.id and y.user_id = auth.uid()),
+         c.is_private
     from public.conversations c
-   where c.kind = 'group' and not c.is_private
+   where c.kind = 'group' and (not c.is_private or public.is_app_admin())
    order by c.last_message_at desc
    limit 200;
 $$;
@@ -263,15 +266,18 @@ begin
   if not found then raise exception 'not_found'; end if;
 end $$;
 
+-- L'admin du site peut rejoindre aussi les groupes privés (modération)
 create or replace function public.join_group(p_conversation uuid)
 returns void language plpgsql security definer set search_path = public as $$
-declare me uuid := public._require_onboarded();
+declare
+  me uuid := public._require_onboarded();
+  v_admin boolean := public.is_app_admin();
 begin
   if not exists (select 1 from public.conversations
-                  where id = p_conversation and kind = 'group' and not is_private) then
+                  where id = p_conversation and kind = 'group' and (not is_private or v_admin)) then
     raise exception 'not_allowed';
   end if;
-  if exists (select 1 from public.group_bans where conversation_id = p_conversation and user_id = me) then
+  if not v_admin and exists (select 1 from public.group_bans where conversation_id = p_conversation and user_id = me) then
     raise exception 'banned';
   end if;
   if (select count(*) from public.conversation_members where conversation_id = p_conversation) >= 500 then
