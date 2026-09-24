@@ -31,6 +31,8 @@ export interface User {
   reviewCount: number;
   /** 25 % each: name, photo, country, sports wished. */
   profilePct: number;
+  /** FRIEND+ admin: shown with the maximum score and every medal. */
+  isAdmin: boolean;
 }
 
 export interface Venue {
