@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Globe, Menu, X, ChevronDown, User, Mail, LogOut } from 'lucide-react';
+import { Globe, Menu, X, ChevronDown, User, Mail, LogOut, Users } from 'lucide-react';
 import { useI18n, LANGS } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
 import { useClub } from '@/lib/club';
+import { useSocial } from '@/lib/social';
 import type { Lang } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import PlayerAvatar from './PlayerAvatar';
@@ -114,7 +115,9 @@ function LanguageSelector({ dark = false, dropUp = false }: { dark?: boolean; dr
 
 function AvatarMenu({ dark = false }: { dark?: boolean }) {
   const { currentUser, pendingInvitesForMe, resetDemo } = useStore();
+  const { incomingIds } = useSocial();
   const { t } = useI18n();
+  const alerts = pendingInvitesForMe.length + incomingIds.length;
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -138,9 +141,9 @@ function AvatarMenu({ dark = false }: { dark?: boolean }) {
         aria-expanded={open}
       >
         <PlayerAvatar user={currentUser} size={38} />
-        {pendingInvitesForMe.length > 0 && (
+        {alerts > 0 && (
           <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#F05252] px-1 text-[10px] font-bold text-white ring-2 ring-white">
-            {pendingInvitesForMe.length}
+            {alerts}
           </span>
         )}
       </button>
@@ -158,8 +161,17 @@ function AvatarMenu({ dark = false }: { dark?: boolean }) {
               <p className="text-sm font-bold text-[#0B2E2B]">{currentUser.name} {currentUser.nationality}</p>
               <p className="text-xs text-[#0B2E2B]/50">{t(`common.level.${currentUser.level}`)} · ★ {currentUser.rating.toFixed(1)}</p>
             </div>
+            <button className={itemCls} onClick={() => { setOpen(false); navigate(`/joueur/${currentUser.id}`); }}>
+              <User className="h-4 w-4 text-[#0E8C7F]" /> {t('player.myPage')}
+            </button>
             <button className={itemCls} onClick={() => { setOpen(false); navigate('/profil'); }}>
-              <User className="h-4 w-4 text-[#0E8C7F]" /> {t('nav.profile')}
+              <Users className="h-4 w-4 text-[#0E8C7F]" />
+              <span className="flex-1 text-left">{t('nav.profile')} · {t('player.stats.friends')}</span>
+              {incomingIds.length > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF6B4A] px-1 text-[10px] font-bold text-white">
+                  {incomingIds.length}
+                </span>
+              )}
             </button>
             <button className={itemCls} onClick={() => { setOpen(false); navigate('/mes-sessions'); }}>
               <Mail className="h-4 w-4 text-[#0E8C7F]" />

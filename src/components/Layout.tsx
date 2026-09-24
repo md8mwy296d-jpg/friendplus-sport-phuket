@@ -6,6 +6,7 @@ import Footer from './Footer';
 import Toasts from './Toast';
 import MobileTabBar from './mobile/MobileTabBar';
 import InstallPrompt from './mobile/InstallPrompt';
+import PostMatchBanner from './social/PostMatchBanner';
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -21,6 +22,7 @@ export default function Layout() {
   return (
     <div className={`flex min-h-[100dvh] flex-col bg-[#FBF6EC] ${inChat ? '' : 'pb-[calc(64px+env(safe-area-inset-bottom))] lg:pb-0'}`}>
       <Navbar />
+      <PostMatchBanner />
       <main className="flex-1">
         <Suspense fallback={<p className="py-24 text-center text-sm text-[#0B2E2B]/50">{t('common.loading')}</p>}>
           <Outlet />

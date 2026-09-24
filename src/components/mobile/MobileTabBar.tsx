@@ -3,6 +3,7 @@ import { CalendarCheck, CirclePlus, Compass, MessageCircle, UserRound } from 'lu
 import { useI18n } from '@/lib/i18n';
 import { useClub } from '@/lib/club';
 import { useStore } from '@/lib/store';
+import { useSocial } from '@/lib/social';
 import PlayerAvatar from '@/components/PlayerAvatar';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +21,7 @@ export default function MobileTabBar() {
   const { t } = useI18n();
   const { unreadTotal } = useClub();
   const { isAuthenticated, currentUser } = useStore();
+  const { incomingIds } = useSocial();
   return (
     <nav
       className="fixed inset-x-0 bottom-0 z-40 border-t border-[#EADFC8] bg-[rgba(251,246,236,.92)] pb-[env(safe-area-inset-bottom)] backdrop-blur-[12px] lg:hidden"
@@ -46,8 +48,13 @@ export default function MobileTabBar() {
                       <Icon className="h-5 w-5" strokeWidth={2.4} />
                     </span>
                   ) : account && isAuthenticated ? (
-                    <span className={cn('rounded-full', isActive && 'ring-2 ring-[#0A6E64] ring-offset-1 ring-offset-[#FBF6EC]')}>
+                    <span className={cn('relative rounded-full', isActive && 'ring-2 ring-[#0A6E64] ring-offset-1 ring-offset-[#FBF6EC]')}>
                       <PlayerAvatar user={currentUser} size={24} ring={false} />
+                      {incomingIds.length > 0 && (
+                        <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF6B4A] px-1 text-[9px] font-bold text-white ring-2 ring-[#FBF6EC]">
+                          {incomingIds.length}
+                        </span>
+                      )}
                     </span>
                   ) : (
                     <span className="relative">

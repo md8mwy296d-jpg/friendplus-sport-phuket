@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 import type { Lang } from './types';
 import { AUTH_DICTS } from './i18n-auth';
 import { CLUB_DICTS } from './i18n-club';
+import { SOCIAL_DICTS } from './i18n-social';
 
 export type Dict = Record<string, string>;
 
@@ -1732,10 +1733,10 @@ const th: Dict = {
 };
 
 export const DICTS: Record<Lang, Dict> = {
-  fr: { ...fr, ...AUTH_DICTS.fr, ...CLUB_DICTS.fr },
-  en: { ...en, ...AUTH_DICTS.en, ...CLUB_DICTS.en },
-  ru: { ...ru, ...AUTH_DICTS.ru, ...CLUB_DICTS.ru },
-  th: { ...th, ...AUTH_DICTS.th, ...CLUB_DICTS.th },
+  fr: { ...fr, ...AUTH_DICTS.fr, ...CLUB_DICTS.fr, ...SOCIAL_DICTS.fr },
+  en: { ...en, ...AUTH_DICTS.en, ...CLUB_DICTS.en, ...SOCIAL_DICTS.en },
+  ru: { ...ru, ...AUTH_DICTS.ru, ...CLUB_DICTS.ru, ...SOCIAL_DICTS.ru },
+  th: { ...th, ...AUTH_DICTS.th, ...CLUB_DICTS.th, ...SOCIAL_DICTS.th },
 };
 
 export interface I18nContextValue {

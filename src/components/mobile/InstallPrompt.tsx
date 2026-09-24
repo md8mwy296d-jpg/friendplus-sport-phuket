@@ -70,7 +70,7 @@ export default function InstallPrompt() {
   };
 
   // never cover a page's own action (join a session, sign in, finish the profile, create, chat)
-  const busyPage = /^\/(session\/|club\/|connexion|bienvenue|creer)/.test(pathname);
+  const busyPage = /^\/(session\/|club\/|joueur\/|connexion|bienvenue|creer)/.test(pathname);
   const show = visible && !busyPage && (Boolean(deferred) || iosHint);
 
   return (

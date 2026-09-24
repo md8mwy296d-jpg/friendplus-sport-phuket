@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import {
-  Bell, CalendarPlus, Check, CheckCircle2, ChevronDown, Dumbbell,
+  Bell, CalendarPlus, Check, CheckCircle2, ChevronDown, Dumbbell, Eye,
   Globe, LogOut, MailCheck, MapPin, Save, Star, Trophy, X,
 } from 'lucide-react';
 import type { Lang, Level, Sport } from '@/lib/types';
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils';
 import SportIcon from '@/components/SportIcon';
 import CountUp from '@/components/home/CountUp';
 import AvatarEditor from '@/components/AvatarEditor';
+import FriendsPanel from '@/components/social/FriendsPanel';
 import { SPORTS } from '@/lib/sports';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
@@ -211,6 +213,12 @@ export default function Profile() {
             {t('page.profile')}
           </h1>
           <p className="mt-2 text-[15px] text-[#0B2E2B]/60">{t('profile.subtitle')}</p>
+          <Link
+            to={`/joueur/${currentUser.id}`}
+            className="mt-4 inline-flex h-10 items-center gap-2 rounded-full bg-[#0B2E2B] px-5 text-sm font-bold text-white hover:bg-[#1E5945]"
+          >
+            <Eye className="h-4 w-4" /> {t('player.myPage')}
+          </Link>
         </motion.header>
 
         {/* Section 1 — identity card */}
@@ -387,6 +395,13 @@ export default function Profile() {
                 </motion.button>
               </div>
             </div>
+          </div>
+        </motion.section>
+
+        {/* friends */}
+        <motion.section {...sectionMotion} className="mt-10">
+          <div className="rounded-[24px] border border-[#EADFC8] bg-white p-6 shadow-[0_2px_8px_rgba(11,46,43,.06)] sm:p-8">
+            <FriendsPanel />
           </div>
         </motion.section>
 

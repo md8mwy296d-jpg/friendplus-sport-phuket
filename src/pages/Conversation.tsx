@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft, CalendarDays, Crown, Flag, ImagePlus, LogOut, MessageCircle, MoreVertical, Pencil, SendHorizontal,
   ShieldOff, Trash2, UserMinus, UserPlus, Users, X,
+  UserRound,
 } from 'lucide-react';
 import { useClub, useConversation, signedImageUrls, type Message } from '@/lib/club';
 import { useStore } from '@/lib/store';
@@ -189,6 +190,7 @@ function ConversationView({ id }: { id: string | undefined }) {
       : `${t(info.isPrivate ? 'club.private' : 'club.public')} · ${t(members.length === 1 ? 'club.members.one' : 'club.members.other', { count: members.length })}`;
 
   const menuActions = [
+    info.kind === 'direct' && otherId && { icon: UserRound, label: t('afterMatch.profile'), run: () => navigate(`/joueur/${otherId}`) },
     info.kind !== 'direct' && { icon: Users, label: t('club.menu.members'), run: () => setMembersOpen(true) },
     info.kind === 'session' && info.sessionId && { icon: CalendarDays, label: t('club.menu.viewSession'), run: () => navigate(`/session/${info.sessionId}`) },
     info.kind === 'group' && isAdmin && { icon: Pencil, label: t('club.menu.edit'), run: () => setEditOpen(true) },
