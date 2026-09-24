@@ -142,6 +142,16 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Badge « OWNER » des patrons de salles (24 septembre 2026)
+
+- Étiquette dorée **OWNER** avec une couronne, à côté du nom (`CertifiedBadge owner`) : page joueur, amis,
+  coéquipiers, participants d'une session, publications et en-tête des Pages.
+- Donnée : colonne `is_owner` de `public_profiles` (fonction `is_page_owner()`, migration `owner_badge`),
+  vraie si le compte possède au moins une Page de terrain. Seul un compte **certifié par l'admin** peut
+  créer une Page : un joueur ne peut donc pas obtenir le badge. L'admin en est exclu (ses pages sont des démos).
+- Le badge apparaît dès la création de la Page (le profil est rechargé), et disparaît si le patron
+  supprime toutes ses pages.
+
 ### ✅ Profil admin au maximum (24 septembre 2026)
 
 - La vue `public_profiles` passe à 100 % la note, le profil, le fair-play et l'activité des comptes présents

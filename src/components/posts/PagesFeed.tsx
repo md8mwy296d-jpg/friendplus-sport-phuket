@@ -77,7 +77,7 @@ export default function PagesFeed({ initialPage }: { initialPage?: string | null
               <p className="font-display text-xl font-bold">{page.name}</p>
               {owner && (
                 <Link to={`/joueur/${owner.id}`} className="mt-0.5 inline-flex items-center gap-1 text-xs text-white/70 hover:text-white">
-                  {t('pages.by')} {owner.name} <CertifiedBadge certified={owner.certified} />
+                  {t('pages.by')} {owner.name} <CertifiedBadge certified={owner.certified} owner={owner.isOwner} />
                 </Link>
               )}
               {venue && <p className="mt-1 flex items-center gap-1 text-xs text-white/70"><MapPin className="h-3.5 w-3.5" /> {venue.name}, {venue.area}</p>}
