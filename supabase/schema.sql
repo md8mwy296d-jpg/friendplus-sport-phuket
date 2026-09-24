@@ -16,7 +16,7 @@ create table if not exists public.profiles (
   name          text not null default '' check (char_length(name) <= 60),
   nationality   text not null default '🌍',
   country_code  text not null default '' check (char_length(country_code) <= 2),
-  lang          text not null default 'fr' check (lang in ('fr','en','ru','th')),
+  lang          text not null default 'fr' check (lang in ('fr','en','ru','th','es','pt','de','nl','sv','pl','uk','tr','ku','kk','uz','ar','ary','ur','hi','zh','ja','ko','ms')),
   sports        text[] not null default '{}' check (sports <@ array['futsal','padel','golf','dance','gym']),
   level         text not null default 'beginner' check (level in ('beginner','intermediate','advanced')),
   rating        numeric(2,1) not null default 5.0 check (rating between 0 and 5),
@@ -24,6 +24,10 @@ create table if not exists public.profiles (
   onboarded     boolean not null default false,
   created_at    timestamptz not null default now()
 );
+
+-- Langues de l'interface (bases créées avec 4 langues : on remplace la contrainte)
+alter table public.profiles drop constraint if exists profiles_lang_check;
+alter table public.profiles add constraint profiles_lang_check check (lang in ('fr','en','ru','th','es','pt','de','nl','sv','pl','uk','tr','ku','kk','uz','ar','ary','ur','hi','zh','ja','ko','ms'));
 
 -- Avatar : photo (chemin dans le stockage « avatars », toujours dans le dossier du joueur)
 -- ou, à défaut, une couleur choisie parmi les 8 dégradés de l'app.

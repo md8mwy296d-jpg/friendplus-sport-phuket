@@ -26,7 +26,8 @@ function Logo({ dark = false, compact = false }: { dark?: boolean; compact?: boo
   return (
     <Link to="/" className="flex items-center gap-2.5">
       <img src="/logo.svg" alt="FRIEND+" className="h-9 w-9" />
-      <span className={cn('leading-none', compact && 'hidden sm:block')}>
+      {/* the brand always reads FRIEND+, even in Arabic / Urdu */}
+      <span dir="ltr" className={cn('leading-none', compact && 'hidden sm:block')}>
         <span className={cn('font-display text-xl font-extrabold tracking-tight', dark ? 'text-white' : 'text-[#0B2E2B]')}>
           FRIEND
           <motion.span
@@ -84,7 +85,7 @@ function LanguageSelector({ dark = false, dropUp = false }: { dark?: boolean; dr
             exit={{ opacity: 0, y: dropUp ? 8 : -8, scale: 0.97 }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
-              'absolute right-0 z-50 min-w-[160px] overflow-hidden rounded-2xl border border-[#EADFC8] bg-white p-1.5 shadow-[0_16px_40px_rgba(11,46,43,.14)]',
+              'absolute right-0 z-50 max-h-[min(70vh,520px)] min-w-[180px] overflow-y-auto rounded-2xl border border-[#EADFC8] bg-white p-1.5 shadow-[0_16px_40px_rgba(11,46,43,.14)]',
               dropUp ? 'bottom-full mb-2' : 'top-full mt-2',
             )}
           >
@@ -93,7 +94,7 @@ function LanguageSelector({ dark = false, dropUp = false }: { dark?: boolean; dr
                 key={l.code}
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.04 * i, duration: 0.15 }}
+                transition={{ delay: 0.02 * Math.min(i, 8), duration: 0.15 }}
               >
                 <button
                   role="option"

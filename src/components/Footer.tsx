@@ -70,7 +70,7 @@ export default function Footer() {
             >
               <Link to="/" className="flex items-center gap-2.5">
                 <img src="/logo.svg" alt="FRIEND+" className="h-10 w-10" />
-                <span className="leading-none">
+                <span dir="ltr" className="leading-none">
                   <span className="font-display text-xl font-extrabold tracking-tight text-white">
                     FRIEND<span className="text-[#FF6B4A]">+</span>
                   </span>
@@ -118,7 +118,7 @@ export default function Footer() {
             <p className="text-xs text-white/45">
               {t('footer.demo')} · {t('footer.rights')}
             </p>
-            <div className="flex gap-1.5">
+            <div className="flex flex-wrap gap-1.5">
               {LANGS.map((l) => (
                 <button
                   key={l.code}

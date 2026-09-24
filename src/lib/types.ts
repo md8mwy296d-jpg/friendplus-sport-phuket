@@ -1,5 +1,11 @@
 export type Sport = 'futsal' | 'padel' | 'golf' | 'dance' | 'gym';
-export type Lang = 'fr' | 'en' | 'ru' | 'th';
+/** Languages bundled with the app. */
+export type BaseLang = 'fr' | 'en' | 'ru' | 'th';
+/** Languages loaded on demand from src/locales/<code>.json. */
+export type ExtraLang =
+  | 'es' | 'pt' | 'de' | 'nl' | 'sv' | 'pl' | 'uk' | 'tr' | 'ku' | 'kk' | 'uz'
+  | 'ar' | 'ary' | 'ur' | 'hi' | 'zh' | 'ja' | 'ko' | 'ms';
+export type Lang = BaseLang | ExtraLang;
 export type Level = 'beginner' | 'intermediate' | 'advanced';
 export type SessionStatus = 'open' | 'full' | 'confirmed' | 'cancelled';
 export type InvitationStatus = 'pending' | 'accepted' | 'declined';

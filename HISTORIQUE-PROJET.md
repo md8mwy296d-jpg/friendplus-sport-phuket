@@ -142,6 +142,22 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ 19 nouvelles langues (24 septembre 2026)
+
+- L'app passe de 4 à **23 langues** : français, anglais, espagnol, portugais (Brésil), allemand, néerlandais,
+  suédois, polonais, russe, ukrainien, turc, kurde (kurmandji, alphabet latin), kazakh, ouzbek (latin),
+  arabe littéraire, arabe maghrébin (darija), ourdou, hindi, thaï, malais, chinois simplifié, japonais, coréen.
+- fr/en/ru/th restent dans le code (`i18n*.ts`). Les 19 autres sont des fichiers `src/locales/<code>.json`
+  (813 textes chacun) **chargés seulement quand on choisit la langue** (`loadLocale`, `import.meta.glob`).
+  Un texte manquant retombe sur l'anglais, puis le français.
+- **Droite à gauche** automatique pour l'arabe, la darija et l'ourdou (`RTL_LANGS`, `<html dir="rtl">`).
+  Le logo FRIEND+ reste en `dir="ltr"`.
+- **Première visite** : la langue du téléphone est choisie si elle existe (ar-MA/DZ/TN → darija).
+- Contrainte `profiles_lang_check` élargie (migration `profiles_more_languages`).
+- Pour ajouter un texte : l'ajouter dans les 4 dictionnaires de base **et** dans les 19 JSON (sinon il
+  s'affiche en anglais dans ces langues). Les traductions ont été rédigées par Claude : une relecture par des
+  locuteurs natifs reste conseillée, surtout pour le kurde, l'ouzbek, le kazakh et la darija.
+
 ### ✅ Identifiants @ et mentions (24 septembre 2026)
 
 - **Identifiant unique** `profiles.username` (minuscules, chiffres, `_`, `.`, 3 à 20 caractères, mots réservés
