@@ -25,6 +25,7 @@ Public visé : voyageurs et résidents, d'où les 4 langues (FR, EN, RU, TH).
 | Projet Vercel + domaine `friendplussport.center` | ✅ Projet `friendplus-sport-phuket`, relié à Supabase (vérifié en ligne) |
 | SMTP (e-mails de connexion) | ✅ Resend branché (domaine vérifié, clé « envoi seul », expéditeur `noreply@friendplussport.center`), codes reçus et connexions OK |
 | Photo de profil | ✅ Stockage `avatars` + colonnes `avatar_path` / `avatar_color` (exécuté) |
+| Amis, moments (`supabase/social.sql`) | ✅ Exécuté |
 | Vraies salles partenaires | ⬜ À saisir (les 7 lieux installés, dont le golf, sont fictifs) |
 
 ### ✅ Corrigé : aucune table n'était lisible (23 septembre 2026, soir)
@@ -49,6 +50,22 @@ non connectés. Parcours testé en base (profil, création de session padel, cha
   recadrée en carré 320 px côté navigateur puis envoyée dans le stockage public `avatars/<id joueur>/`.
   À défaut, 8 couleurs au choix, enregistrées en base (avant : dans le navigateur seulement).
   Visible partout où `PlayerAvatar` est utilisé (sessions, Club, invitations).
+
+### ✅ Amis, pages joueurs, moments et « après-match » (23 septembre 2026, soir)
+
+Nouveau fichier **`supabase/social.sql`** (exécuté ; à relancer après `schema.sql` et `club.sql` sur une base neuve).
+- **Page publique** `/joueur/<id>` : photo, drapeau, niveau, sports, bio, matchs joués / organisés / amis,
+  boutons **Ajouter en ami** et **Message** (conversation privée du Club). Accessible depuis l'équipe d'une
+  session, le menu d'une conversation privée, le menu avatar (« Voir ma page publique »).
+- **Amis** : demande, acceptation / refus, retrait, en temps réel. Pastille sur l'onglet Profil et l'avatar
+  quand une demande arrive. Bloquer un joueur supprime l'amitié. Section « Mes amis » sur la page Profil.
+- **Moments** : texte (500 caractères) et/ou photo (stockage public `moments`, noms aléatoires), liés ou non
+  à une session jouée, visibles par **tout le monde** ou **amis seulement** (filtré par la base, y compris
+  entre joueurs qui se bloquent). 20 par jour maximum. Suppression par l'auteur ou un admin.
+- **Après le match** : quand une session où le joueur était inscrit est terminée, une bannière s'affiche
+  sous l'en-tête pendant 3 jours (« Match terminé : … », masquable). Sur la page de la session, un bloc
+  « Le match est fini, garde le contact » liste les coéquipiers avec Profil / Ajouter en ami / Message,
+  plus la discussion d'équipe et « Partager un moment » (pré-rempli avec la session).
 
 ### ✅ Tarifs fixes et golf (23 septembre 2026, soir)
 
@@ -140,6 +157,9 @@ les 132 fichiers à plat à la racine du dépôt. L'arborescence a été reconst
 | `src/pages/Club.tsx`, `src/pages/Conversation.tsx` | Liste des discussions / découverte des groupes, écran de discussion |
 | `src/components/mobile/` | Barre d'onglets mobile, bannière « Installer l'app » |
 | `src/components/AvatarEditor.tsx`, `src/lib/avatar.ts` | Choix de la photo / couleur de profil |
+| `supabase/social.sql`, `src/lib/social.ts` | Amis, moments, fin de match |
+| `src/pages/PlayerProfile.tsx`, `src/components/social/` | Page publique d'un joueur, boutons ami / message, moments, bannière après-match |
+| `src/lib/sports.ts` | Liste des sports, joueurs par sport, durées, calcul des prix |
 | `DEPLOIEMENT.md` | Guide de mise en ligne pas à pas |
 
 ### Modèle de données
@@ -197,7 +217,7 @@ RLS active partout. Lecture publique pour `venues`, `sessions`, `session_players
 
 1. Notifications hors app (e-mail, LINE ou WhatsApp) à la confirmation ou l'annulation : aujourd'hui le joueur doit ouvrir l'app.
 2. Paiement à l'inscription (Stripe, ou Omise qui gère PromptPay) pour réduire les absences.
-3. Signalement d'un joueur et modération.
+3. ~~Signalement d'un joueur et modération~~ ✅ (Club). Prochaine étape sociale : fil d'actualité des moments de mes amis, « j'aime » et commentaires.
 4. ~~PWA~~ ✅ fait.
 5. Kit partenariats et fichier de prospection des salles (fournis dans le zip d'origine) à exploiter côté commercial.
 

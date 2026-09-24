@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { motion } from 'framer-motion';
 import {
@@ -26,6 +26,8 @@ import QuotaRing from '@/components/QuotaRing';
 import Countdown from '@/components/Countdown';
 import PlayerAvatar from '@/components/PlayerAvatar';
 import InviteModal from '@/components/InviteModal';
+import AfterMatch from '@/components/social/AfterMatch';
+import { sessionEnded } from '@/lib/social';
 import SessionCard from '@/components/SessionCard';
 import EmptyState from '@/components/EmptyState';
 
@@ -86,6 +88,14 @@ export default function SessionDetail() {
       )
       .slice(0, 4);
   }, [session, sessions, getVenue, venue]);
+
+  // arriving from the "match over" banner: jump to the after-match block
+  const sessionId = session?.id;
+  useEffect(() => {
+    if (!sessionId || window.location.hash !== '#apres-match') return;
+    const id = window.setTimeout(() => document.getElementById('apres-match')?.scrollIntoView({ behavior: 'smooth' }), 400);
+    return () => window.clearTimeout(id);
+  }, [sessionId]);
 
   if (!session && !ready) {
     return <p className="py-24 text-center text-sm text-[#0B2E2B]/50">{t('common.loading')}</p>;
@@ -311,6 +321,8 @@ export default function SessionDetail() {
         </div>
       </section>
 
+      {meIn && sessionEnded(session) && <AfterMatch session={session} />}
+
       {/* Section 2 — confirmation countdown banner */}
       <section
         className={cn(
@@ -464,10 +476,12 @@ export default function SessionDetail() {
                       transition={{ type: 'spring', stiffness: 300, damping: 20, delay: i * 0.05 }}
                       className="flex flex-col items-center gap-1.5 text-center"
                     >
-                      <PlayerAvatar user={u} size={64} />
-                      <p className="max-w-full truncate text-[13px] font-semibold text-[#0B2E2B]">
-                        {u.name.split(' ')[0]} <span aria-hidden>{u.nationality}</span>
-                      </p>
+                      <Link to={`/joueur/${u.id}`} className="flex max-w-full flex-col items-center gap-1.5">
+                        <PlayerAvatar user={u} size={64} />
+                        <p className="max-w-full truncate text-[13px] font-semibold text-[#0B2E2B]">
+                          {u.name.split(' ')[0]} <span aria-hidden>{u.nationality}</span>
+                        </p>
+                      </Link>
                       <p className="text-[11px] text-[#0B2E2B]/50">{t(`common.level.${u.level}`)}</p>
                       {club.enabled && u.id !== currentUser.id && (
                         <button
