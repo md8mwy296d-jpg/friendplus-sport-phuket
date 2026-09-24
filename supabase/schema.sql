@@ -107,6 +107,16 @@ end $$;
 revoke execute on function public.is_admin_profile(uuid) from public;
 grant execute on function public.is_admin_profile(uuid) to anon, authenticated;
 
+-- Badge « Owner » : patron d'au moins une Page de terrain (club_pages, pages.sql).
+-- Seuls les comptes certifiés par l'admin peuvent créer une Page (save_page) : un joueur ne peut pas l'obtenir.
+create or replace function public.is_page_owner(p_user uuid)
+returns boolean language plpgsql stable security definer set search_path = public as $$
+begin
+  return exists (select 1 from public.club_pages where owner_id = p_user);
+end $$;
+revoke execute on function public.is_page_owner(uuid) from public;
+grant execute on function public.is_page_owner(uuid) to anon, authenticated;
+
 create or replace view public.public_profiles
 with (security_invoker = true) as
 select p.id, p.name, p.nationality, p.country_code, p.lang, p.sports, p.level,
@@ -132,7 +142,8 @@ select p.id, p.name, p.nationality, p.country_code, p.lang, p.sports, p.level,
        case when a.adm then 100 else
        ( 25 * (char_length(btrim(p.name)) >= 2)::int + 25 * (p.avatar_path is not null)::int
        + 25 * (p.country_code <> '')::int + 25 * (cardinality(p.sports) > 0)::int ) end as profile_pct,
-       a.adm as is_admin
+       a.adm as is_admin,
+       (not a.adm and public.is_page_owner(p.id)) as is_owner
 from public.profiles p
 cross join lateral (select public.is_admin_profile(p.id) as adm) a;
 

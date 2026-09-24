@@ -3,6 +3,8 @@ import type { Dict } from './i18n';
 /** Strings for friends, player pages, shared moments and the after-match prompt. */
 export const SOCIAL_DICTS: Record<'fr' | 'en' | 'ru' | 'th', Dict> = {
   fr: {
+    'owner.tag': 'OWNER',
+    'owner.label': 'Propriétaire de salle — badge réservé aux patrons de terrains partenaires',
     'presence.online': 'En ligne',
     'presence.offline': 'Hors ligne',
     'presence.justNow': 'Vu à l’instant',
@@ -193,6 +195,8 @@ export const SOCIAL_DICTS: Record<'fr' | 'en' | 'ru' | 'th', Dict> = {
     'club.err.session_closed': 'Ce n’est plus possible pour cette session.',
   },
   en: {
+    'owner.tag': 'OWNER',
+    'owner.label': 'Venue owner — badge reserved for partner venue owners',
     'presence.online': 'Online',
     'presence.offline': 'Offline',
     'presence.justNow': 'Seen just now',
@@ -383,6 +387,8 @@ export const SOCIAL_DICTS: Record<'fr' | 'en' | 'ru' | 'th', Dict> = {
     'club.err.session_closed': 'This is no longer possible for this session.',
   },
   ru: {
+    'owner.tag': 'OWNER',
+    'owner.label': 'Владелец площадки — значок только для владельцев площадок-партнёров',
     'presence.online': 'В сети',
     'presence.offline': 'Не в сети',
     'presence.justNow': 'Был(а) только что',
@@ -573,6 +579,8 @@ export const SOCIAL_DICTS: Record<'fr' | 'en' | 'ru' | 'th', Dict> = {
     'club.err.session_closed': 'Для этой сессии это уже невозможно.',
   },
   th: {
+    'owner.tag': 'OWNER',
+    'owner.label': 'เจ้าของสนาม — ตราสำหรับเจ้าของสนามพันธมิตรเท่านั้น',
     'presence.online': 'ออนไลน์',
     'presence.offline': 'ออฟไลน์',
     'presence.justNow': 'เพิ่งใช้งาน',

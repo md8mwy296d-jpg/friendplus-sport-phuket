@@ -61,7 +61,7 @@ export default function AfterMatch({ session }: { session: Session }) {
                   <Link to={`/joueur/${u.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                     <PlayerAvatar user={u} size={44} ring={false} />
                     <span className="min-w-0">
-                      <span className="block truncate text-[15px] font-bold text-[#0B2E2B]">{u.name} <CertifiedBadge certified={u.certified} /> {u.nationality}</span>
+                      <span className="block truncate text-[15px] font-bold text-[#0B2E2B]">{u.name} <CertifiedBadge certified={u.certified} owner={u.isOwner} /> {u.nationality}</span>
                       <span className="flex items-center gap-2 text-xs font-semibold text-[#0E8C7F]">
                         <ScoreBadge user={u} /> {t('afterMatch.profile')} →
                       </span>

@@ -20,7 +20,7 @@ function Row({ user, status, online, children }: { user: User; status?: string; 
         <span className="min-w-0">
           <span className="flex items-center gap-1.5">
             <span className="truncate text-[15px] font-bold text-[#0B2E2B]">{user.name}</span>
-            <CertifiedBadge certified={user.certified} />
+            <CertifiedBadge certified={user.certified} owner={user.isOwner} />
             <span aria-hidden>{user.nationality}</span>
             <RankInsignia rank={rankFor(user.score)} size={20} />
           </span>

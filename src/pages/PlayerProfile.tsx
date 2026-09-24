@@ -74,7 +74,7 @@ export default function PlayerProfile() {
         <div className="mx-auto flex max-w-[760px] flex-col items-center text-center">
           <PresenceAvatar userId={player.id} user={player} size={112} ring={false} className="font-display text-4xl font-bold ring-4 ring-white/30" />
           <h1 className="mt-4 font-display text-[clamp(1.8rem,6vw,2.4rem)] font-bold leading-tight text-white">
-            {player.name} <CertifiedBadge certified={player.certified} /> <span className="align-middle text-2xl">{player.nationality}</span>
+            {player.name} <CertifiedBadge certified={player.certified} owner={player.isOwner} /> <span className="align-middle text-2xl">{player.nationality}</span>
             <RankInsignia rank={rankFor(player.score)} size={30} className="ml-2 align-middle" />
           </h1>
           <p className="mt-1 text-sm text-white/65">

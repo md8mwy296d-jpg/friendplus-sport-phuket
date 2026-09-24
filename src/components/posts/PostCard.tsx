@@ -54,7 +54,7 @@ function Comments({ post, canModerate }: { post: Post; canModerate: boolean }) {
                 {u ? <Link to={`/joueur/${u.id}`}><PlayerAvatar user={u} size={28} ring={false} /></Link> : <span className="h-7 w-7 rounded-full bg-[#EADFC8]" />}
                 <div className="min-w-0 flex-1 rounded-2xl bg-[#FBF6EC] px-3 py-2">
                   <p className="flex items-center gap-1 text-xs font-bold text-[#0B2E2B]">
-                    {u?.name ?? '—'} <CertifiedBadge certified={u?.certified} />
+                    {u?.name ?? '—'} <CertifiedBadge certified={u?.certified} owner={u?.isOwner} />
                     <span className="ml-1 font-normal text-[#0B2E2B]/40">{formatDate(c.createdAt, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                     {canDelete && (
                       <button onClick={() => void remove(c.id)} className="ml-auto text-[#0B2E2B]/35 hover:text-[#D03838]" aria-label={t('posts.delete')}>
@@ -128,7 +128,7 @@ export default function PostCard({ post, page, canModerate, onLike, onDelete, on
         <div className="min-w-0 flex-1 leading-tight">
           <p className="flex items-center gap-1 truncate text-sm font-bold text-[#0B2E2B]">
             {official ? t('certified.admin') : page ? page.name : author?.name ?? '—'}
-            <CertifiedBadge certified={official || (page ? getUser(page.ownerId)?.certified : false)} />
+            <CertifiedBadge certified={official || (page ? getUser(page.ownerId)?.certified : false)} owner={page ? getUser(page.ownerId)?.isOwner : false} />
           </p>
           <p className="truncate text-xs text-[#0B2E2B]/45">
             {page && author ? `${author.name} · ` : ''}

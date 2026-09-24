@@ -112,6 +112,7 @@ function useFail() {
 
 export function useClubPages() {
   const fail = useFail();
+  const { refresh } = useStore();
   const [pages, setPages] = useState<ClubPage[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -132,15 +133,17 @@ export function useClubPages() {
     });
     if (error) { fail(error); return null; }
     await load();
+    void refresh(); // the owner's badge
     return data as string;
-  }, [fail, load]);
+  }, [fail, load, refresh]);
 
   const remove = useCallback(async (id: string) => {
     const { error } = await supabase.from('club_pages').delete().eq('id', id);
     if (error) { fail(error); return false; }
     await load();
+    void refresh();
     return true;
-  }, [fail, load]);
+  }, [fail, load, refresh]);
 
   return { pages, loading, save, remove, reload: load };
 }

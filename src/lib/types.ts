@@ -33,6 +33,8 @@ export interface User {
   profilePct: number;
   /** FRIEND+ admin: shown with the maximum score and every medal. */
   isAdmin: boolean;
+  /** Owns a venue Page (certified venue boss): gold "OWNER" badge players can't get. */
+  isOwner: boolean;
 }
 
 export interface Venue {

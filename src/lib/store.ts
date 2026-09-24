@@ -132,6 +132,7 @@ function toUser(r: Row): User {
     reviewCount: r.review_count ?? 0,
     profilePct: r.profile_pct ?? 0,
     isAdmin: Boolean(r.is_admin),
+    isOwner: Boolean(r.is_owner),
   };
 }
 
@@ -207,6 +208,7 @@ const GUEST: User = {
   reviewCount: 0,
   profilePct: 0,
   isAdmin: false,
+  isOwner: false,
 };
 
 const KNOWN_ERRORS = [
