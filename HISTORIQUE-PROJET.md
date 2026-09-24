@@ -142,6 +142,13 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Journal des connexions : IP, ville, appareil (25 septembre 2026)
+
+- **Profil admin → « Dernières connexions »** : pour chaque visiteur (une ligne par session de navigation), on voit la date et l'heure, le pays et la ville, l'adresse IP et l'appareil, avec un bouton « Bloquer l'IP ».
+- Table `public.visit_log` (`supabase/visits.sql`), écrite par `api/hit.js`, lisible seulement par l'admin (`admin_visit_log`).
+- Les lignes de plus de **30 jours sont effacées automatiquement**.
+- **Obligatoire** : l'indiquer dans la politique de confidentialité (journal de connexions pour la sécurité, conservé 30 jours).
+
 ### ✅ Visites par ville et modération (IP, suspension) (25 septembre 2026)
 
 - **Visites par ville** (admin seulement, page Profil) : compteur anonyme par jour, pays et ville (`public.visit_stats`, `supabase/visits.sql`). La ville vient des en-têtes géo de Vercel, lus par `api/hit.js`, appelé une fois par session de navigation. Aucune IP ni aucun identifiant n'est enregistré.
