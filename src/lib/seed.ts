@@ -20,8 +20,8 @@ export const SEED_USERS: User[] = ([
   { id: 'u-lucas', name: 'Lucas Silva', nationality: '🇧🇷', countryCode: 'BR', lang: 'en', sports: ['futsal'], level: 'advanced', rating: 4.9, bio: 'Brésilien, le futsal dans le sang.', joinedCount: 31, organizedCount: 6 },
   { id: 'u-minjun', name: 'Min-jun Park', nationality: '🇰🇷', countryCode: 'KR', lang: 'en', sports: ['padel', 'futsal'], level: 'intermediate', rating: 4.5, bio: 'Voyageur solo, toujours partant.', joinedCount: 8, organizedCount: 0 },
   { id: 'u-femke', name: 'Femke van Dijk', nationality: '🇳🇱', countryCode: 'NL', lang: 'en', sports: ['gym', 'dance'], level: 'intermediate', rating: 4.4, bio: 'Coach fitness, à Bang Tao pour 2 mois.', joinedCount: 12, organizedCount: 3 },
-] as Omit<User, 'avatarUrl' | 'avatarColor' | 'certified' | 'fairplayPct' | 'activityPct' | 'score' | 'reviewCount' | 'profilePct'>[])
-  .map((u) => ({ ...u, avatarUrl: '', avatarColor: null, certified: false, fairplayPct: null, activityPct: 0, score: null, reviewCount: 0, profilePct: 0 }));
+] as Omit<User, 'avatarUrl' | 'avatarColor' | 'certified' | 'fairplayPct' | 'activityPct' | 'score' | 'reviewCount' | 'profilePct' | 'isAdmin'>[])
+  .map((u) => ({ ...u, avatarUrl: '', avatarColor: null, certified: false, fairplayPct: null, activityPct: 0, score: null, reviewCount: 0, profilePct: 0, isAdmin: false }));
 
 export const SEED_VENUES: Venue[] = [
   { id: 'v-patong', name: 'Patong Sports Arena', area: 'Patong', sports: ['futsal', 'padel'], address: 'Rat-U-Thit 200 Pee Rd, Patong', rating: 4.7, priceFrom: 150, photo: '/venue-patong.jpg', amenities: ['Vestiaires', 'Douches', 'Parking', 'Bar'], hours: '08:00 – 23:00' },

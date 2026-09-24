@@ -53,5 +53,6 @@ export function medalsFor(user: User): Medal[] {
     { key: 'multisport', earned: user.sports.length >= 3 },
     { key: 'certified', earned: user.certified },
   ];
+  if (user.isAdmin) return medals.map((m) => ({ ...m, earned: true }));
   return [...medals.filter((m) => m.earned), ...medals.filter((m) => !m.earned)];
 }

@@ -142,6 +142,14 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Profil admin au maximum (24 septembre 2026)
+
+- La vue `public_profiles` passe à 100 % la note, le profil, le fair-play et l'activité des comptes présents
+  dans `app_admins` (fonction `is_admin_profile()`, migrations `admin_max_score` et
+  `public_profiles_is_admin`). Nouvelle colonne `is_admin` (→ `User.isAdmin`) : toutes les médailles sont
+  débloquées (`medalsFor`) et le grade est « Légende ».
+- Le compte admin est aussi marqué certifié (badge bleu).
+
 ### ✅ Accès rapide, amis en ligne et recherche d'amis (24 septembre 2026)
 
 - **Bannière « Accès rapide »** (`components/social/QuickAccess.tsx`), en haut du Club et d'Explorer pour un
