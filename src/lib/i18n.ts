@@ -189,7 +189,7 @@ const fr: Dict = {
   'home.featured.link': 'Tout explorer',
   // Home — sports
   'home.sports.eyebrow': 'TERRAINS DE JEU',
-  'home.sports.title': 'Quatre sports, une communauté',
+  'home.sports.title': 'Cinq sports, une communauté',
   'home.sports.futsal.quota': '10 joueurs · 5v5',
   'home.sports.padel.quota': '4 joueurs · 2v2',
   'home.sports.dance.quota': '8–15 participants',
@@ -618,7 +618,7 @@ const en: Dict = {
   'home.featured.title': 'Spots up for grabs',
   'home.featured.link': 'Explore all',
   'home.sports.eyebrow': 'PLAYGROUNDS',
-  'home.sports.title': 'Four sports, one community',
+  'home.sports.title': 'Five sports, one community',
   'home.sports.futsal.quota': '10 players · 5v5',
   'home.sports.padel.quota': '4 players · 2v2',
   'home.sports.dance.quota': '8–15 participants',
