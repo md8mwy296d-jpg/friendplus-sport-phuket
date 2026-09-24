@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useClub, useConversation, signedImageUrls, type Message } from '@/lib/club';
 import { useStore } from '@/lib/store';
+import { presenceLabel, useSocial } from '@/lib/social';
 import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import EmptyState from '@/components/EmptyState';
@@ -91,6 +92,7 @@ function ConversationView({ id }: { id: string | undefined }) {
   const isAdmin = me?.role === 'admin' || club.isAppAdmin;
   const otherId = info?.kind === 'direct' ? members.find((m) => m.userId !== myId)?.userId : undefined;
   const other = otherId ? getUser(otherId) : undefined;
+  const social = useSocial();
   const blockedOther = Boolean(otherId && club.blockedIds.includes(otherId));
   const canAddMembers = info?.kind === 'group' && isMember && (!info.isPrivate || me?.role === 'admin');
   const title = info ? conversationTitle(info, other, t('club.unknownPlayer')) : '';
@@ -186,7 +188,11 @@ function ConversationView({ id }: { id: string | undefined }) {
   }
 
   const subtitle = info.kind === 'direct'
-    ? other ? `${other.nationality} · ${t(`common.level.${other.level}`)}` : ''
+    ? other
+      ? otherId && social.friendIds.includes(otherId)
+        ? presenceLabel(t, social.isOnline(otherId), social.lastSeenOf(otherId))
+        : `${other.nationality} · ${t(`common.level.${other.level}`)}`
+      : ''
     : info.kind === 'session'
       ? `${t('club.sessionChatHint')} · ${t(members.length === 1 ? 'club.members.one' : 'club.members.other', { count: members.length })}`
       : `${t(info.isPrivate ? 'club.private' : 'club.public')} · ${t(members.length === 1 ? 'club.members.one' : 'club.members.other', { count: members.length })}`;
@@ -225,7 +231,7 @@ function ConversationView({ id }: { id: string | undefined }) {
             className="flex min-w-0 flex-1 items-center gap-3 text-left"
             onClick={() => info.kind !== 'direct' && setMembersOpen(true)}
           >
-            <ConversationAvatar kind={info.kind} sport={info.sport} other={other} isPrivate={info.kind === 'group' && info.isPrivate} size={40} />
+            <ConversationAvatar kind={info.kind} sport={info.sport} other={other} otherId={otherId} isPrivate={info.kind === 'group' && info.isPrivate} size={40} />
             <span className="min-w-0">
               <span className="block truncate font-display text-[17px] font-semibold text-[#0B2E2B]">{title}</span>
               <span className="block truncate text-xs text-[#0B2E2B]/50">{subtitle}</span>

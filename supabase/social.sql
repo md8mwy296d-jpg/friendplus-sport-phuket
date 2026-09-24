@@ -281,3 +281,39 @@ end $$;
 revoke execute on function public.review_teammate(uuid,uuid,boolean,boolean) from public, anon;
 grant execute on function public.review_teammate(uuid,uuid,boolean,boolean) to authenticated;
 
+
+-- ---------------------------------------------------------------------
+-- 8. Présence : « en ligne » en direct (canal Realtime), « vu il y a … » ici.
+--    L'heure de dernière visite n'est lisible que par les amis acceptés.
+-- ---------------------------------------------------------------------
+create table if not exists public.last_seen (
+  user_id  uuid primary key references public.profiles(id) on delete cascade,
+  seen_at  timestamptz not null default now()
+);
+alter table public.last_seen enable row level security;
+revoke all on public.last_seen from public, anon, authenticated;
+
+-- Appelée par l'app ouverte (au plus une écriture par minute et par joueur)
+create or replace function public.touch_last_seen()
+returns void language sql volatile security definer set search_path = public as $$
+  insert into public.last_seen (user_id, seen_at)
+  select auth.uid(), now() where auth.uid() is not null
+  on conflict (user_id) do update set seen_at = excluded.seen_at
+    where public.last_seen.seen_at < now() - interval '1 minute';
+$$;
+
+-- Dernière visite de mes amis uniquement
+create or replace function public.friends_last_seen()
+returns table (user_id uuid, seen_at timestamptz)
+language sql stable security definer set search_path = public as $$
+  select l.user_id, l.seen_at
+  from public.friendships f
+  join public.last_seen l
+    on l.user_id = case when f.requester_id = auth.uid() then f.addressee_id else f.requester_id end
+  where f.status = 'accepted' and auth.uid() in (f.requester_id, f.addressee_id);
+$$;
+
+revoke execute on function public.touch_last_seen() from public, anon;
+revoke execute on function public.friends_last_seen() from public, anon;
+grant execute on function public.touch_last_seen() to authenticated;
+grant execute on function public.friends_last_seen() to authenticated;

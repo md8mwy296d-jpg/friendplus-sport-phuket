@@ -399,7 +399,7 @@ export default function Profile() {
         </motion.section>
 
         {/* friends */}
-        <motion.section {...sectionMotion} className="mt-10">
+        <motion.section {...sectionMotion} id="amis" className="mt-10 scroll-mt-24">
           <div className="rounded-[24px] border border-[#EADFC8] bg-white p-6 shadow-[0_2px_8px_rgba(11,46,43,.06)] sm:p-8">
             <FriendsPanel />
           </div>

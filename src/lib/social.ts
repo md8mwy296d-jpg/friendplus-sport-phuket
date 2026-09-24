@@ -38,6 +38,7 @@ export interface MomentInput {
 type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 const MOMENTS_BUCKET = 'moments';
+const PRESENCE_TOPIC = 'online-players';
 
 const toFriendship = (r: Row): Friendship => ({
   requesterId: r.requester_id,
@@ -71,6 +72,12 @@ export interface SocialContextValue {
   respond: (userId: string, accept: boolean) => Promise<boolean>;
   removeFriend: (userId: string) => Promise<boolean>;
   refresh: () => Promise<void>;
+  /** Players with the app open right now (Realtime presence). */
+  onlineIds: Set<string>;
+  /** A friend currently online. */
+  isOnline: (userId: string) => boolean;
+  /** Last visit of a friend (ISO date), when known. */
+  lastSeenOf: (userId: string) => string | undefined;
 }
 
 const SocialContext = createContext<SocialContextValue | null>(null);
@@ -87,6 +94,8 @@ export function SocialProvider({ children }: { children: ReactNode }) {
   const myId = currentUser.id;
   const enabled = SUPABASE_CONFIGURED && isAuthenticated && profileComplete;
   const [friendships, setFriendships] = useState<Friendship[]>([]);
+  const [onlineIds, setOnlineIds] = useState<Set<string>>(() => new Set());
+  const [lastSeen, setLastSeen] = useState<Record<string, string>>({});
   const timer = useRef<number | undefined>(undefined);
 
   const refresh = useCallback(async () => {
@@ -111,6 +120,50 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [enabled, myId, refresh]);
+
+  // presence: every open app joins the "online" channel under its player id
+  useEffect(() => {
+    if (!enabled) { setOnlineIds(new Set()); return; }
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    void (async () => {
+      // supabase.channel() hands back a same-name channel that is still closing: wait for it to go
+      const stale = supabase.getChannels().find((c) => c.topic === `realtime:${PRESENCE_TOPIC}`);
+      if (stale) await supabase.removeChannel(stale);
+      if (cancelled) return;
+      const ch = supabase.channel(PRESENCE_TOPIC, { config: { presence: { key: myId } } });
+      channel = ch;
+      ch
+        .on('presence', { event: 'sync' }, () => setOnlineIds(new Set(Object.keys(ch.presenceState()))))
+        .on('presence', { event: 'leave' }, ({ key }) => {
+          // they just left: "seen a moment ago" until the next refresh
+          setLastSeen((prev) => ({ ...prev, [key]: new Date().toISOString() }));
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') void ch.track({ at: new Date().toISOString() });
+        });
+    })();
+    return () => {
+      cancelled = true;
+      if (channel) void supabase.removeChannel(channel);
+    };
+  }, [enabled, myId]);
+
+  // "seen … ago": note my own visit and read my friends' (friends only, see social.sql §8)
+  useEffect(() => {
+    if (!enabled) { setLastSeen({}); return; }
+    const beat = async () => {
+      if (document.visibilityState !== 'visible') return;
+      await supabase.rpc('touch_last_seen');
+      const { data } = await supabase.rpc('friends_last_seen');
+      setLastSeen(Object.fromEntries(((data ?? []) as Row[]).map((r) => [r.user_id as string, r.seen_at as string])));
+    };
+    void beat();
+    const id = window.setInterval(() => { void beat(); }, 120_000);
+    const onVisible = () => { void beat(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { window.clearInterval(id); document.removeEventListener('visibilitychange', onVisible); };
+  }, [enabled, myId, friendships.length]);
 
   const fail = useCallback((err: unknown) => {
     console.error(err);
@@ -159,8 +212,11 @@ export function SocialProvider({ children }: { children: ReactNode }) {
       respond,
       removeFriend,
       refresh,
+      onlineIds,
+      isOnline: (userId) => userId !== myId && onlineIds.has(userId) && friendIds.includes(userId),
+      lastSeenOf: (userId) => lastSeen[userId],
     };
-  }, [enabled, friendships, myId, sendRequest, respond, removeFriend, refresh]);
+  }, [enabled, friendships, myId, sendRequest, respond, removeFriend, refresh, onlineIds, lastSeen]);
 
   return createElement(SocialContext.Provider, { value }, children);
 }
@@ -236,4 +292,24 @@ export function useMoments(userId: string | undefined) {
 /** A session is over once its end time has passed (cancelled sessions never "end"). */
 export function sessionEnded(session: { status: string; date: string; durationMin: number }, now = Date.now()): boolean {
   return session.status !== 'cancelled' && new Date(session.date).getTime() + session.durationMin * 60_000 <= now;
+}
+
+/* --------------------------------------------------------------- presence */
+
+/** "En ligne", "Vu il y a 5 min", "Vu hier"… for a friend. */
+export function presenceLabel(
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  online: boolean,
+  seenAt: string | undefined,
+  now = Date.now(),
+): string {
+  if (online) return t('presence.online');
+  if (!seenAt) return t('presence.offline');
+  const min = Math.max(0, Math.floor((now - new Date(seenAt).getTime()) / 60_000));
+  if (min < 2) return t('presence.justNow');
+  if (min < 60) return t('presence.minutes', { n: min });
+  const h = Math.floor(min / 60);
+  if (h < 24) return t('presence.hours', { n: h });
+  const d = Math.floor(h / 24);
+  return d === 1 ? t('presence.yesterday') : t('presence.days', { n: d });
 }

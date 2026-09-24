@@ -142,6 +142,23 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Accès rapide, amis en ligne et recherche d'amis (24 septembre 2026)
+
+- **Bannière « Accès rapide »** (`components/social/QuickAccess.tsx`), en haut du Club et d'Explorer pour un
+  joueur connecté. Elle regroupe : amis en ligne (un appui ouvre le message privé), messages privés avec
+  pastille de non-lus (« Tout voir » → `/club?f=direct`), mes groupes privés, et mes pages
+  (→ `/club?tab=pages&page=<id>`).
+- **Présence** : canal Realtime `online-players` (clé = id du joueur), géré dans `SocialProvider`
+  (`onlineIds`, `isOnline`, `lastSeenOf`). Point vert (`PresenceAvatar`) seulement pour les **amis**, sur
+  la liste d'amis, la liste des discussions, l'en-tête d'un message privé et la page joueur.
+- **« Vu il y a … »** : table `last_seen` (social.sql §8, migration `friends_presence`) sans aucun accès
+  direct. `touch_last_seen()` est appelée toutes les 2 min par l'app ouverte (une écriture par minute au plus).
+  `friends_last_seen()` ne renvoie que les amis acceptés. Testé : un inconnu ne voit rien.
+- **Mes amis** (Profil, ancre `#amis`) : recherche par nom, filtre « En ligne », tri en ligne d'abord puis
+  par dernière visite.
+- Note : `supabase.channel()` renvoie un canal du même nom encore en fermeture. L'effet de présence attend
+  donc la suppression de l'ancien canal avant d'en recréer un.
+
 ### ✅ Pages de démonstration et vraies photos de golf (24 septembre 2026)
 
 - `supabase/demo-posts.sql` (migration `demo_club_pages`) : 3 pages de démo appartenant au compte admin,
