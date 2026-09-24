@@ -2,6 +2,13 @@
 // (public.blocked_ips, managed from the admin moderation panel).
 // Fails open: if Supabase is slow or unreachable, the page is served normally.
 
+// Public project values (also shipped in the site's JS bundle), used when the
+// VITE_* variables are not exposed to the runtime.
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://fqrlyykadbzaxzjneupm.supabase.co';
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxcmx5eWthZGJ6YXh6am5ldXBtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwODYxNjMsImV4cCI6MjEwNTY2MjE2M30.Geptc2NrxreWT6Yv52MENiZMemeK9RokcnW0uTcogOI';
+
+import { next } from '@vercel/functions';
+
 export const config = {
   // pages only: skip static files (anything with a dot), assets and the API
   matcher: ['/((?!api/|assets/|.*\\..*).*)'],
@@ -20,8 +27,8 @@ const BLOCKED_PAGE = `<!doctype html><html lang="fr"><head><meta charset="utf-8"
 async function isBlocked(ip) {
   const hit = cache.get(ip);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.blocked;
-  const url = process.env.VITE_SUPABASE_URL;
-  const key = process.env.VITE_SUPABASE_ANON_KEY;
+  const url = SUPABASE_URL;
+  const key = SUPABASE_ANON_KEY;
   if (!url || !key) return false;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 800);
@@ -51,5 +58,6 @@ export default async function middleware(request) {
       headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
     });
   }
-  // nothing returned: the request continues to the site
+  // continue to the site; the header shows the guard ran
+  return next({ headers: { 'x-fp-guard': '1' } });
 }
