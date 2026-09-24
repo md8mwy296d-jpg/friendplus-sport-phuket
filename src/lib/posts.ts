@@ -79,6 +79,8 @@ const toPage = (r: Row): ClubPage => ({
 
 const count = (v: unknown): number => (Array.isArray(v) && v[0] ? Number((v[0] as { count: number }).count) : 0);
 
+const isSitePhoto = (path: string) => path.startsWith('/');
+
 const toPost = (r: Row, liked: Set<string>): Post => ({
   id: r.id,
   authorId: r.author_id,
@@ -87,7 +89,9 @@ const toPost = (r: Row, liked: Set<string>): Post => ({
   title: r.title ?? '',
   body: r.body ?? '',
   imagePath: r.image_path ?? null,
-  imageUrl: r.image_path ? supabase.storage.from(POSTS_BUCKET).getPublicUrl(r.image_path).data.publicUrl : '',
+  imageUrl: !r.image_path ? ''
+    : isSitePhoto(r.image_path) ? r.image_path // photo du site (publications de démo)
+      : supabase.storage.from(POSTS_BUCKET).getPublicUrl(r.image_path).data.publicUrl,
   pinned: Boolean(r.pinned),
   createdAt: r.created_at,
   likeCount: count(r.post_likes),
@@ -221,7 +225,7 @@ export function usePosts(scope: PostScope) {
   const remove = useCallback(async (post: Post) => {
     const { error } = await supabase.from('posts').delete().eq('id', post.id);
     if (error) { fail(error); return; }
-    if (post.imagePath && post.authorId === me) await supabase.storage.from(POSTS_BUCKET).remove([post.imagePath]);
+    if (post.imagePath && !isSitePhoto(post.imagePath) && post.authorId === me) await supabase.storage.from(POSTS_BUCKET).remove([post.imagePath]);
     setPosts((prev) => prev.filter((p) => p.id !== post.id));
   }, [fail, me]);
 
