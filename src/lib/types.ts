@@ -35,6 +35,8 @@ export interface User {
   isAdmin: boolean;
   /** Owns a venue Page (certified venue boss): gold "OWNER" badge players can't get. */
   isOwner: boolean;
+  /** Unique handle shown as @username (lowercase), '' until the player picks a name. */
+  username: string;
 }
 
 export interface Venue {

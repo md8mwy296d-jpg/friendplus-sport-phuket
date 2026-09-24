@@ -4,6 +4,8 @@ import type { Session } from '@/lib/types';
 import type { MomentInput, MomentVisibility } from '@/lib/social';
 import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import MentionMenu from '@/components/mentions/MentionMenu';
+import { useMentionOptions, useMentions } from '@/lib/mentions';
 
 const MAX_SOURCE_BYTES = 15 * 1024 * 1024;
 
@@ -24,6 +26,9 @@ export default function MomentComposer({ sessions, defaultSessionId = null, onPo
   const [sessionId, setSessionId] = useState<string>(defaultSessionId ?? '');
   const [visibility, setVisibility] = useState<MomentVisibility>('public');
   const [busy, setBusy] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const mention = useMentions(body, (v) => setBody(v.slice(0, 500)), bodyRef);
+  const options = useMentionOptions(mention.query);
 
   useEffect(() => { if (defaultSessionId) setSessionId(defaultSessionId); }, [defaultSessionId]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
@@ -52,13 +57,19 @@ export default function MomentComposer({ sessions, defaultSessionId = null, onPo
 
   return (
     <form onSubmit={submit} className="rounded-[20px] border border-[#EADFC8] bg-white p-4 shadow-[0_2px_8px_rgba(11,46,43,.06)] sm:p-5">
-      <textarea
-        value={body}
-        onChange={(e) => setBody(e.target.value.slice(0, 500))}
-        placeholder={t('moments.composer.placeholder')}
-        rows={3}
-        className="w-full resize-none rounded-2xl bg-[#FBF6EC] px-4 py-3 text-[15px] text-[#0B2E2B] outline-none placeholder:text-[#0B2E2B]/35 focus:ring-2 focus:ring-[#0E8C7F]/25"
-      />
+      <div className="relative">
+        <MentionMenu options={options} index={mention.index} onPick={mention.pick} />
+        <textarea
+          ref={bodyRef}
+          value={body}
+          onChange={(e) => setBody(e.target.value.slice(0, 500))}
+          {...mention.bind}
+          onKeyDown={(e) => { mention.handleKey(e, options.map((u) => u.username)); }}
+          placeholder={t('moments.composer.placeholder')}
+          rows={3}
+          className="w-full resize-none rounded-2xl bg-[#FBF6EC] px-4 py-3 text-[15px] text-[#0B2E2B] outline-none placeholder:text-[#0B2E2B]/35 focus:ring-2 focus:ring-[#0E8C7F]/25"
+        />
+      </div>
       {preview && (
         <div className="relative mt-3 overflow-hidden rounded-2xl">
           <img src={preview} alt="" className="max-h-72 w-full object-cover" />

@@ -165,6 +165,7 @@ function AvatarMenu({ dark = false }: { dark?: boolean }) {
               <p className="flex items-center gap-1.5 text-sm font-bold text-[#0B2E2B]">
                 <RankInsignia rank={rankFor(currentUser.score)} size={18} /> {currentUser.name} {currentUser.nationality}
               </p>
+              {currentUser.username && <p className="text-xs font-semibold text-[#0A6E64]">@{currentUser.username}</p>}
               <p className="text-xs text-[#0B2E2B]/50">{t(`common.level.${currentUser.level}`)} · {currentUser.score === null ? t('score.new') : `${t('score.short')} ${currentUser.score} %`}</p>
             </div>
             <button className={itemCls} onClick={() => { setOpen(false); navigate(`/joueur/${currentUser.id}`); }}>

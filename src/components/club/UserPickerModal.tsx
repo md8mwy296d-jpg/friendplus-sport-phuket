@@ -4,6 +4,7 @@ import { useStore } from '@/lib/store';
 import { useClub } from '@/lib/club';
 import { useI18n } from '@/lib/i18n';
 import PlayerAvatar from '@/components/PlayerAvatar';
+import { handleOf, searchPlayers } from '@/lib/players';
 import { Modal } from './ClubUI';
 
 /** Searchable list of players: pick one (new private message) or add several (group members). */
@@ -24,13 +25,12 @@ export default function UserPickerModal({
   const [added, setAdded] = useState<string[]>([]);
 
   const candidates = useMemo(() => {
-    const q = query.trim().toLowerCase();
     const hidden = new Set([currentUser.id, ...exclude, ...blockedIds]);
-    return users
-      .filter((u) => !hidden.has(u.id))
-      .filter((u) => !q || u.name.toLowerCase().includes(q))
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .slice(0, 60);
+    const pool = users.filter((u) => !hidden.has(u.id));
+    // "@hakan" or a name
+    return query.trim()
+      ? searchPlayers(pool, query, 60)
+      : [...pool].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 60);
   }, [users, currentUser.id, exclude, blockedIds, query]);
 
   const pick = async (id: string) => {
@@ -66,6 +66,7 @@ export default function UserPickerModal({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15px] font-semibold text-[#0B2E2B]">{u.name} {u.nationality}</span>
                   <span className="block truncate text-[13px] text-[#0B2E2B]/50">
+                    {u.username && <span className="font-semibold text-[#0A6E64]">{handleOf(u)} · </span>}
                     {u.sports.map((s) => t(`sport.${s}`)).join(' · ')} · {t(`common.level.${u.level}`)}
                   </span>
                 </span>

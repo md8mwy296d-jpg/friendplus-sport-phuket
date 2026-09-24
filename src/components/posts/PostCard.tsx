@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Heart, MessageCircle, Pin, PinOff, Send, Share2, Trash2 } from 'lucide-react';
 import type { ClubPage, Post } from '@/lib/posts';
@@ -11,6 +11,9 @@ import PlayerAvatar from '@/components/PlayerAvatar';
 import CertifiedBadge from '@/components/CertifiedBadge';
 import SportIcon from '@/components/SportIcon';
 import UserPickerModal from '@/components/club/UserPickerModal';
+import MentionMenu from '@/components/mentions/MentionMenu';
+import MentionText from '@/components/mentions/MentionText';
+import { useMentionOptions, useMentions } from '@/lib/mentions';
 
 interface Props {
   post: Post;
@@ -29,6 +32,9 @@ function Comments({ post, canModerate }: { post: Post; canModerate: boolean }) {
   const { comments, loading, add, remove } = useComments(post.id, true);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const field = useRef<HTMLInputElement>(null);
+  const mention = useMentions(text, (v) => setText(v.slice(0, 500)), field);
+  const options = useMentionOptions(mention.query);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -62,7 +68,7 @@ function Comments({ post, canModerate }: { post: Post; canModerate: boolean }) {
                       </button>
                     )}
                   </p>
-                  <p className="whitespace-pre-line text-sm text-[#0B2E2B]/85">{c.body}</p>
+                  <p className="whitespace-pre-line text-sm text-[#0B2E2B]/85"><MentionText text={c.body} /></p>
                 </div>
               </li>
             );
@@ -70,10 +76,14 @@ function Comments({ post, canModerate }: { post: Post; canModerate: boolean }) {
         </ul>
       )}
       {isAuthenticated && (
-        <form onSubmit={submit} className="flex items-center gap-2">
+        <form onSubmit={submit} className="relative flex items-center gap-2">
+          <MentionMenu options={options} index={mention.index} onPick={mention.pick} />
           <input
+            ref={field}
             value={text}
             onChange={(e) => setText(e.target.value.slice(0, 500))}
+            {...mention.bind}
+            onKeyDown={(e) => { mention.handleKey(e, options.map((u) => u.username)); }}
             placeholder={t('posts.commentPh')}
             className="h-10 min-w-0 flex-1 rounded-full border border-[#EADFC8] bg-white px-4 text-sm outline-none focus:border-[#0E8C7F]"
           />
@@ -144,7 +154,7 @@ export default function PostCard({ post, page, canModerate, onLike, onDelete, on
 
       <div className="px-4 pb-2 pt-3 sm:px-5">
         {post.title && <h3 className="font-display text-lg font-bold leading-snug text-[#0B2E2B]">{post.title}</h3>}
-        {post.body && <p className="mt-1 whitespace-pre-line text-[15px] leading-relaxed text-[#0B2E2B]/80">{post.body}</p>}
+        {post.body && <p className="mt-1 whitespace-pre-line text-[15px] leading-relaxed text-[#0B2E2B]/80"><MentionText text={post.body} /></p>}
       </div>
       {post.imageUrl && <img src={post.imageUrl} alt="" loading="lazy" className="max-h-[480px] w-full object-cover" />}
 

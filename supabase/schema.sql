@@ -97,6 +97,94 @@ create table if not exists public.invitations (
 create index if not exists invitations_to_idx on public.invitations (to_user_id, status);
 
 -- Profils publics + compteurs (joué / organisé)
+-- Identifiant « @ » unique (ex. @hakan) pour retrouver un joueur. Minuscules, chiffres, « _ » et « . ».
+-- Créé automatiquement à partir du nom (trigger), modifiable ensuite via set_username().
+alter table public.profiles add column if not exists username text
+  check (username is null or username ~ '^[a-z0-9_.]{3,20}$');
+create unique index if not exists profiles_username_key on public.profiles (username);
+
+create or replace function public.username_reserved(p text)
+returns boolean language sql immutable as $$
+  select p = any (array['admin','administrateur','friendplus','friend','support','help','aide','moderateur',
+                        'moderator','official','officiel','root','system','staff','owner','null','undefined']);
+$$;
+
+-- Propose un identifiant libre à partir d'un nom : « Hakan Yılmaz » → hakanylmaz, hakanylmaz482…
+create or replace function public.suggest_username(p_name text, p_self uuid default null)
+returns text language plpgsql volatile security definer set search_path = public as $$
+declare
+  base text;
+  cand text;
+  i int := 0;
+begin
+  base := left(regexp_replace(lower(translate(coalesce(p_name, ''),
+            'ÀÂÄÁÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝàâäáãåçéèêëíìîïñóòôöõúùûüýÿıİşŞğĞ',
+            'aaaaaaceeeeiiiinooooouuuuyaaaaaaceeeeiiiinooooouuuuyyiissgg')), '[^a-z0-9]+', '', 'g'), 14);
+  if char_length(base) < 3 then base := 'joueur'; end if;
+  cand := base;
+  while public.username_reserved(cand)
+     or exists (select 1 from public.profiles where username = cand and id is distinct from p_self) loop
+    i := i + 1;
+    cand := base || case when i < 30 then (100 + floor(random() * 9900))::int::text
+                         else (100000 + floor(random() * 900000))::int::text end;
+  end loop;
+  return cand;
+end $$;
+
+create or replace function public.profiles_default_username()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.username is null and char_length(btrim(new.name)) >= 2 then
+    new.username := public.suggest_username(new.name, new.id);
+  end if;
+  return new;
+end $$;
+drop trigger if exists profiles_default_username on public.profiles;
+create trigger profiles_default_username before insert or update of name on public.profiles
+  for each row execute function public.profiles_default_username();
+
+-- Profils existants : un par un, pour que chacun voie les identifiants déjà attribués
+do $$
+declare r record;
+begin
+  for r in select id, name from public.profiles where username is null and char_length(btrim(name)) >= 2 order by created_at loop
+    update public.profiles set username = public.suggest_username(r.name, r.id) where id = r.id;
+  end loop;
+end $$;
+
+-- Changer son identifiant (le « @ » initial est accepté et ignoré)
+create or replace function public.set_username(p_username text)
+returns text language plpgsql volatile security definer set search_path = public as $$
+declare
+  me uuid := auth.uid();
+  v text := ltrim(lower(btrim(coalesce(p_username, ''))), '@');
+begin
+  if me is null then raise exception 'not_authenticated'; end if;
+  if v !~ '^[a-z0-9_.]{3,20}$' or v ~ '^[._]' or v ~ '[._]$' or v ~ '[._]{2}' or public.username_reserved(v) then
+    raise exception 'username_invalid';
+  end if;
+  if exists (select 1 from public.profiles where username = v and id <> me) then
+    raise exception 'username_taken';
+  end if;
+  update public.profiles set username = v where id = me;
+  return v;
+end $$;
+
+create or replace function public.username_available(p_username text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select not public.username_reserved(v)
+     and v ~ '^[a-z0-9_.]{3,20}$'
+     and not exists (select 1 from public.profiles where username = v and id is distinct from auth.uid())
+  from (select ltrim(lower(btrim(coalesce(p_username, ''))), '@') as v) x;
+$$;
+
+revoke execute on function public.suggest_username(text, uuid) from public, anon, authenticated;
+revoke execute on function public.profiles_default_username() from public, anon, authenticated;
+revoke execute on function public.set_username(text) from public, anon;
+revoke execute on function public.username_available(text) from public, anon;
+grant execute on function public.set_username(text) to authenticated;
+grant execute on function public.username_available(text) to authenticated;
+
 -- Les comptes admin FRIEND+ (table app_admins, club.sql) affichent la note maximale.
 -- plpgsql : le corps n'est vérifié qu'à l'appel, app_admins peut donc être créée après.
 create or replace function public.is_admin_profile(p_user uuid)
@@ -143,7 +231,8 @@ select p.id, p.name, p.nationality, p.country_code, p.lang, p.sports, p.level,
        ( 25 * (char_length(btrim(p.name)) >= 2)::int + 25 * (p.avatar_path is not null)::int
        + 25 * (p.country_code <> '')::int + 25 * (cardinality(p.sports) > 0)::int ) end as profile_pct,
        a.adm as is_admin,
-       (not a.adm and public.is_page_owner(p.id)) as is_owner
+       (not a.adm and public.is_page_owner(p.id)) as is_owner,
+       p.username
 from public.profiles p
 cross join lateral (select public.is_admin_profile(p.id) as adm) a;
 

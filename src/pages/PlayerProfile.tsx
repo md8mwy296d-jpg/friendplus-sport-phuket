@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router';
 import { BadgeCheck, PenLine } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { presenceLabel, useSocial, useMoments } from '@/lib/social';
+import { handleOf } from '@/lib/players';
 import { useClub, clubErrorKey } from '@/lib/club';
 import { setCertified } from '@/lib/posts';
 import CertifiedBadge from '@/components/CertifiedBadge';
@@ -20,9 +21,13 @@ import { rankFor } from '@/lib/rank';
 
 /** Public page of a player: identity, friend / message actions and shared moments. */
 export default function PlayerProfile() {
-  const { id = '' } = useParams();
+  const { id: param = '' } = useParams();
   const [params] = useSearchParams();
-  const { getUser, currentUser, sessions, ready, isAuthenticated, refresh, pushToast } = useStore();
+  const { getUser, users, currentUser, sessions, ready, isAuthenticated, refresh, pushToast } = useStore();
+  // /joueur/@hakan works as well as /joueur/<id>
+  const id = param.startsWith('@')
+    ? users.find((u) => u.username === param.slice(1).toLowerCase())?.id ?? param
+    : param;
   const { isAppAdmin } = useClub();
   const [certBusy, setCertBusy] = useState(false);
   const { statusWith, isOnline, lastSeenOf } = useSocial();
@@ -77,6 +82,7 @@ export default function PlayerProfile() {
             {player.name} <CertifiedBadge certified={player.certified} owner={player.isOwner} /> <span className="align-middle text-2xl">{player.nationality}</span>
             <RankInsignia rank={rankFor(player.score)} size={30} className="ml-2 align-middle" />
           </h1>
+          {player.username && <p className="mt-0.5 text-[15px] font-semibold text-[#2FBFA5]">{handleOf(player)}</p>}
           <p className="mt-1 text-sm text-white/65">
             {t(`rank.${rankFor(player.score).key}`)} · {t(`common.level.${player.level}`)} · {player.score === null ? t('score.new') : `${t('score.short')} ${player.score} %`}
           </p>

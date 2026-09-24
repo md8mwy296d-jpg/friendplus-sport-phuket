@@ -65,6 +65,8 @@ export interface StoreContextValue {
   sendInvitation: (sessionId: string, toUserId: string, message?: string) => void;
   respondInvitation: (invitationId: string, accept: boolean) => void;
   updateProfile: (patch: ProfilePatch) => Promise<boolean>;
+  /** Changes the player's @handle (unique; errors are shown as toasts). */
+  setUsername: (username: string) => Promise<boolean>;
   /** Resizes the picture, stores it and makes it the profile photo. */
   uploadAvatar: (file: File) => Promise<boolean>;
   removeAvatar: () => Promise<boolean>;
@@ -133,6 +135,7 @@ function toUser(r: Row): User {
     profilePct: r.profile_pct ?? 0,
     isAdmin: Boolean(r.is_admin),
     isOwner: Boolean(r.is_owner),
+    username: r.username ?? '',
   };
 }
 
@@ -209,11 +212,13 @@ const GUEST: User = {
   profilePct: 0,
   isAdmin: false,
   isOwner: false,
+  username: '',
 };
 
 const KNOWN_ERRORS = [
   'not_authenticated', 'profile_incomplete', 'session_closed', 'not_found', 'too_soon', 'too_far',
   'too_many_sessions', 'venue_sport_mismatch', 'not_allowed', 'rate_limited', 'invalid_input',
+  'username_taken', 'username_invalid',
 ];
 
 function errorKey(err: unknown): string {
@@ -522,6 +527,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return true;
   }, [myId, load, pushError]);
 
+  const setUsername = useCallback(async (username: string): Promise<boolean> => {
+    if (!myId) return false;
+    const { error } = await supabase.rpc('set_username', { p_username: username });
+    if (error) { pushError(error); return false; }
+    await load();
+    return true;
+  }, [myId, load, pushError]);
+
   const currentAvatarPath = useCallback(async (): Promise<string | null> => {
     const { data } = await supabase.from('profiles').select('avatar_path').eq('id', myId).maybeSingle();
     return (data?.avatar_path as string | null) ?? null;
@@ -607,6 +620,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       sendInvitation,
       respondInvitation,
       updateProfile,
+      setUsername,
       uploadAvatar,
       removeAvatar,
       signOut,
@@ -617,7 +631,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [users, myId, lang, venues, rates, sessions, invitations, me, toasts, authReady, dataReady, auth,
     joinSession, leaveSession, cancelSession, createSession, sendInvitation, respondInvitation,
-    updateProfile, uploadAvatar, removeAvatar, signOut, resetDemo, dismissToast, pushToast, load]);
+    updateProfile, setUsername, uploadAvatar, removeAvatar, signOut, resetDemo, dismissToast, pushToast, load]);
 
   return createElement(StoreContext.Provider, { value }, children);
 }

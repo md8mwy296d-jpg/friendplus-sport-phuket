@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MessageCircle, MessageCirclePlus, Plus, UserPlus, Users } from 'lucide-react';
+import { AtSign, Bell, MessageCircle, MessageCirclePlus, Plus, Search, UserPlus, Users } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { useClub, type Conversation } from '@/lib/club';
 import { presenceLabel, useSocial } from '@/lib/social';
@@ -9,11 +9,13 @@ import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { User } from '@/lib/types';
 import { conversationTitle, useListTime } from '@/lib/club-format';
+import { handleOf, searchPlayers } from '@/lib/players';
+import { useMentionFeed } from '@/lib/mentions';
 import { ConversationAvatar } from '@/components/club/ClubUI';
 import { FriendButton } from './FriendButton';
 import PresenceAvatar from './PresenceAvatar';
 
-type Panel = 'messages' | 'groups' | 'friends';
+type Panel = 'messages' | 'groups' | 'friends' | 'mentions';
 
 function Count({ n }: { n: number }) {
   if (n <= 0) return null;
@@ -79,14 +81,25 @@ const footerCls = 'block rounded-xl py-2.5 text-center text-sm font-bold text-[#
 export default function HeaderHub({ dark = false }: { dark?: boolean }) {
   const club = useClub();
   const social = useSocial();
-  const { getUser } = useStore();
+  const { getUser, users, currentUser } = useStore();
   const { t } = useI18n();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [open, setOpen] = useState<Panel | null>(null);
+  const [search, setSearch] = useState('');
+  const feed = useMentionFeed(club.enabled && social.enabled, currentUser.id);
+  const [freshIds, setFreshIds] = useState<Set<string>>(() => new Set());
+  const listTime = useListTime();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => { setOpen(null); }, [pathname]);
+  useEffect(() => { if (open !== 'friends') setSearch(''); }, [open]);
+  // opening 🔔 marks everything as seen, but keeps the new ones highlighted while it is open
+  useEffect(() => {
+    if (open !== 'mentions') return;
+    setFreshIds(new Set(feed.items.filter((m) => !m.seen).map((m) => m.id)));
+    void feed.markSeen();
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent | TouchEvent) => {
@@ -113,6 +126,7 @@ export default function HeaderHub({ dark = false }: { dark?: boolean }) {
   const friends = social.friendIds.map((id) => getUser(id)).filter((u): u is User => Boolean(u));
   const online = friends.filter((u) => social.isOnline(u.id));
   const close = () => setOpen(null);
+  const found = searchPlayers(users.filter((u) => u.id !== currentUser.id && !club.blockedIds.includes(u.id)), search);
 
   const openChat = async (userId: string) => {
     close();
@@ -124,6 +138,7 @@ export default function HeaderHub({ dark = false }: { dark?: boolean }) {
     { id: 'messages', icon: MessageCircle, label: t('quick.direct'), count: unreadDirect },
     { id: 'groups', icon: Users, label: t('hub.groups'), count: unreadGroups },
     { id: 'friends', icon: UserPlus, label: t('quick.myFriends'), count: incoming.length },
+    { id: 'mentions', icon: Bell, label: t('mention.title'), count: feed.unseen },
   ];
 
   return (
@@ -203,11 +218,68 @@ export default function HeaderHub({ dark = false }: { dark?: boolean }) {
               </PanelShell>
             )}
 
+            {open === 'mentions' && (
+              <PanelShell title={t('mention.title')}>
+                {feed.items.length === 0 ? (
+                  <Empty>{t('mention.empty')}</Empty>
+                ) : feed.items.map((m) => {
+                  const author = getUser(m.authorId);
+                  return (
+                    <Link key={m.id} to={m.to} onClick={close}
+                      className={cn('flex items-start gap-3 rounded-xl px-2.5 py-2 transition-colors hover:bg-[#FBF6EC]', freshIds.has(m.id) && 'bg-[#0E8C7F]/[0.07]')}>
+                      <span className="relative shrink-0">
+                        {author
+                          ? <PresenceAvatar userId={author.id} user={author} size={44} ring={false} />
+                          : <span className="block h-11 w-11 rounded-full bg-[#EADFC8]" />}
+                        <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#0E8C7F] text-white ring-2 ring-white">
+                          <AtSign className="h-3 w-3" strokeWidth={3} />
+                        </span>
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm leading-snug text-[#0B2E2B]">
+                          <b>{author?.name ?? t('club.unknownPlayer')}</b> {t(`mention.kind.${m.kind}`)}
+                        </span>
+                        {m.excerpt && <span className="mt-0.5 block truncate text-[13px] text-[#0B2E2B]/55">« {m.excerpt} »</span>}
+                        <span className={cn('mt-0.5 block text-xs', freshIds.has(m.id) ? 'font-bold text-[#0E8C7F]' : 'text-[#0B2E2B]/45')}>{listTime(m.createdAt)}</span>
+                      </span>
+                    </Link>
+                  );
+                })}
+              </PanelShell>
+            )}
+
             {open === 'friends' && (
               <PanelShell
                 title={t('quick.myFriends')}
                 footer={<Link to="/profil#amis" onClick={close} className={footerCls}>{t('hub.seeAllFriends')}</Link>}
               >
+                <label className="mx-1.5 mb-2 flex h-10 items-center gap-2 rounded-full bg-[#0B2E2B]/[0.06] px-3.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#0E8C7F]/40">
+                  <Search className="h-4 w-4 shrink-0 text-[#0B2E2B]/45" />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && found[0]) { close(); navigate(`/joueur/${found[0].id}`); } }}
+                    placeholder={t('handle.search')}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    className="h-full min-w-0 flex-1 bg-transparent text-sm text-[#0B2E2B] outline-none placeholder:text-[#0B2E2B]/40"
+                  />
+                </label>
+                {search.trim() ? (
+                  found.length === 0 ? <Empty>{t('handle.noResult')}</Empty> : found.map((u) => (
+                    <div key={u.id} className="flex items-center gap-3 rounded-xl px-2.5 py-2 hover:bg-[#FBF6EC]">
+                      <Link to={`/joueur/${u.id}`} onClick={close} className="flex min-w-0 flex-1 items-center gap-3">
+                        <PresenceAvatar userId={u.id} user={u} size={44} ring={false} />
+                        <span className="min-w-0">
+                          <span className="block truncate text-[15px] font-bold text-[#0B2E2B]">{u.name} {u.nationality}</span>
+                          <span className="block truncate text-[13px] font-semibold text-[#0A6E64]">{handleOf(u)}</span>
+                        </span>
+                      </Link>
+                      <FriendButton userId={u.id} size="sm" />
+                    </div>
+                  ))
+                ) : (<>
                 {incoming.length > 0 && (
                   <>
                     <p className="px-2.5 pb-1 pt-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#D14A2B]">{t('friends.requests')} · {incoming.length}</p>
@@ -238,6 +310,7 @@ export default function HeaderHub({ dark = false }: { dark?: boolean }) {
                     <MessageCircle className="h-5 w-5 text-[#0E8C7F]" />
                   </button>
                 ))}
+                </>)}
               </PanelShell>
             )}
           </motion.div>

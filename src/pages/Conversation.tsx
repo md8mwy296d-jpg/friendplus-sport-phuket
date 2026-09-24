@@ -17,6 +17,9 @@ import GroupFormModal from '@/components/club/GroupFormModal';
 import UserPickerModal from '@/components/club/UserPickerModal';
 import { ConfirmModal, ConversationAvatar, Modal } from '@/components/club/ClubUI';
 import GroupPosts from '@/components/posts/GroupPosts';
+import MentionMenu from '@/components/mentions/MentionMenu';
+import MentionText from '@/components/mentions/MentionText';
+import { useMentionOptions, useMentions } from '@/lib/mentions';
 import { conversationTitle, isSameDay } from '@/lib/club-format';
 
 type Confirm = { title: string; body?: string; label?: string; danger?: boolean; run: () => void } | null;
@@ -83,6 +86,8 @@ function ConversationView({ id }: { id: string | undefined }) {
   const listRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const mention = useMentions(draft, setDraft, inputRef);
+  const mentionOptions = useMentionOptions(mention.query);
   const stickToBottom = useRef(true);
   const prevCount = useRef(0);
 
@@ -375,7 +380,7 @@ function ConversationView({ id }: { id: string | undefined }) {
                                   <span className="block h-48 w-[240px] animate-pulse bg-[#0B2E2B]/10" />
                                 )
                               )}
-                              {m.body && <span className="block whitespace-pre-wrap break-words px-3.5 py-2">{m.body}</span>}
+                              {m.body && <span className="block whitespace-pre-wrap break-words px-3.5 py-2"><MentionText text={m.body} className={mine ? 'text-white underline decoration-white/50' : undefined} /></span>}
                             </>
                           )}
                         </button>
@@ -436,16 +441,20 @@ function ConversationView({ id }: { id: string | undefined }) {
                 >
                   <ImagePlus className="h-5 w-5" />
                 </button>
+                <div className="relative flex min-w-0 flex-1">
+                <MentionMenu options={mentionOptions} index={mention.index} onPick={mention.pick} />
                 <textarea
                   ref={inputRef}
                   rows={1}
                   value={draft}
                   maxLength={2000}
                   onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={onKeyDown}
+                  {...mention.bind}
+                  onKeyDown={(e) => { if (!mention.handleKey(e, mentionOptions.map((u) => u.username))) onKeyDown(e); }}
                   placeholder={t('club.chat.placeholder')}
                   className="max-h-[132px] min-h-11 flex-1 resize-none rounded-[22px] border border-[#EADFC8] bg-[#FBF6EC]/70 px-4 py-2.5 text-[15px] leading-snug text-[#0B2E2B] outline-none placeholder:text-[#0B2E2B]/35 focus:border-[#0E8C7F] focus:bg-white"
                 />
+                </div>
                 <button
                   onClick={() => void send()}
                   disabled={sending || (!draft.trim() && !photo)}
