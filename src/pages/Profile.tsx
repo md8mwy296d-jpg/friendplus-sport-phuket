@@ -15,6 +15,8 @@ import CountUp from '@/components/home/CountUp';
 import AvatarEditor from '@/components/AvatarEditor';
 import FriendsPanel from '@/components/social/FriendsPanel';
 import UsernameField from '@/components/social/UsernameField';
+import VisitsByCity from '@/components/admin/VisitsByCity';
+import BlockedIps from '@/components/admin/BlockedIps';
 import { SPORTS } from '@/lib/sports';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
@@ -407,6 +409,10 @@ export default function Profile() {
             <FriendsPanel />
           </div>
         </motion.section>
+
+        {/* admin only: anonymous visits by city */}
+        <VisitsByCity />
+        <BlockedIps />
 
         {/* Section 2 — stats */}
         <motion.section {...sectionMotion} className="mt-10" ref={statsRef}>
