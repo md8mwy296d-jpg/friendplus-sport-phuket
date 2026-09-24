@@ -81,6 +81,7 @@ export default function Onboarding() {
         <div className="flex flex-col items-center gap-1">
           <AvatarEditor name={name} flag={countries.find((c) => c.code === country)?.flag} size={88} />
           <p className="text-xs text-[#0B2E2B]/50">{t('avatar.optional')}</p>
+          <p className="mt-1 rounded-full bg-[#22C55E]/12 px-3 py-1 text-center text-xs font-semibold text-[#15803D]">{t('onboard.scoreHint')}</p>
         </div>
 
         <div className="flex flex-col gap-2">

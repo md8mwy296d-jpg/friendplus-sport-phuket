@@ -130,6 +130,7 @@ function toUser(r: Row): User {
     activityPct: r.activity_pct ?? 0,
     score: r.score ?? null,
     reviewCount: r.review_count ?? 0,
+    profilePct: r.profile_pct ?? 0,
   };
 }
 
@@ -203,6 +204,7 @@ const GUEST: User = {
   activityPct: 0,
   score: null,
   reviewCount: 0,
+  profilePct: 0,
 };
 
 const KNOWN_ERRORS = [

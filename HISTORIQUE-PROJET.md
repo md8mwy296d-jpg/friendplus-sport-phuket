@@ -67,8 +67,10 @@ session, après-match, amis, nouveautés). Un admin certifie ou retire la certif
 - Après un match terminé (pendant 7 jours), chaque joueur note anonymement ses coéquipiers :
   « A respecté les règles du jeu ? » et « A respecté les autres joueurs ? » (oui / non, modifiable).
 - **Fair-play** = % de « oui » reçus ; **Activité** = 10 % par match joué (100 % dès 10 matchs).
-- **Note** = 70 % fair-play + 30 % activité, calculée par la base (`public_profiles`), affichée « Nouveau »
-  tant qu'aucun avis n'est reçu. Table `match_reviews` + fonction `review_teammate()` dans `social.sql` ;
+- **Note sur 100** (mise à jour du 24/09) = **profil complet 15 pts** (nom, photo, pays, sports souhaités :
+  3,75 pts chacun) + **fair-play 60 pts** + **activité 25 pts**, calculée par la base (`public_profiles`,
+  colonnes `profile_pct`, `fairplay_pct`, `activity_pct`, `score`). Un nouveau joueur au profil complet démarre
+  à 15 %. Le joueur voit sur sa page ce qu'il manque à son profil. Table `match_reviews` + fonction `review_teammate()` dans `social.sql` ;
   nul ne voit qui l'a noté, nul ne peut modifier sa propre note.
 
 ### ✅ Amis, pages joueurs, moments et « après-match » (23 septembre 2026, soir)

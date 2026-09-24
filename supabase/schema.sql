@@ -105,15 +105,20 @@ select p.id, p.name, p.nationality, p.country_code, p.lang, p.sports, p.level,
           where sp.user_id = p.id and sp.kind = 'player')::int as joined_count,
        (select count(*) from public.sessions s where s.creator_id = p.id)::int as organized_count,
        p.avatar_path, p.avatar_color, p.certified,
-       -- Note FRIEND+ en % : 70 % fair-play (avis des coéquipiers) + 30 % activité (10 matchs = 100 %)
+       -- Note FRIEND+ sur 100 : profil complet 15 + fair-play 60 (avis des coéquipiers) + activité 25 (10 matchs = max)
        case when p.fairplay_total > 0 then round(100.0 * p.fairplay_up / p.fairplay_total)::int end as fairplay_pct,
        least(100, 10 * (select count(*) from public.session_players sp
                           where sp.user_id = p.id and sp.kind = 'player'))::int as activity_pct,
-       case when p.fairplay_total > 0 then round(
-         0.7 * (100.0 * p.fairplay_up / p.fairplay_total)
-         + 0.3 * least(100, 10 * (select count(*) from public.session_players sp
-                                    where sp.user_id = p.id and sp.kind = 'player')))::int end as score,
-       p.fairplay_total / 2 as review_count
+       round(
+         0.15 * ( 25 * (char_length(btrim(p.name)) >= 2)::int + 25 * (p.avatar_path is not null)::int
+                + 25 * (p.country_code <> '')::int + 25 * (cardinality(p.sports) > 0)::int )
+         + 0.60 * coalesce(100.0 * p.fairplay_up / nullif(p.fairplay_total, 0), 0)
+         + 0.25 * least(100, 10 * (select count(*) from public.session_players sp
+                                     where sp.user_id = p.id and sp.kind = 'player'))
+       )::int as score,
+       p.fairplay_total / 2 as review_count,
+       ( 25 * (char_length(btrim(p.name)) >= 2)::int + 25 * (p.avatar_path is not null)::int
+       + 25 * (p.country_code <> '')::int + 25 * (cardinality(p.sports) > 0)::int ) as profile_pct
 from public.profiles p;
 
 -- Tarifs fixés par FRIEND+ (les joueurs ne choisissent pas le prix).
