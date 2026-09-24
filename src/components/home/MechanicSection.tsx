@@ -9,6 +9,7 @@ import PlayerAvatar from '@/components/PlayerAvatar';
 import SportIcon from '@/components/SportIcon';
 import type { SessionStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { sportPhoto } from '@/lib/sportPhotos';
 
 const QUOTA = 10;
 const CYCLE_MS = 8000;
@@ -82,7 +83,7 @@ function DemoCard() {
       className="w-full max-w-md overflow-hidden rounded-[20px] border border-[#EADFC8] bg-white shadow-[0_4px_12px_rgba(11,46,43,.08),0_28px_70px_rgba(11,46,43,.16)]"
     >
       <div className="relative aspect-[16/10] overflow-hidden">
-        <img src="/sport-futsal.jpg" alt="" className="h-full w-full object-cover" />
+        <img src={sportPhoto('futsal', 'mechanic')} alt="" className="h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0B2E2B]/50 to-transparent" />
         <div className="absolute left-3 top-3">
           <StatusBadge status={status} className="bg-white/90 backdrop-blur" />

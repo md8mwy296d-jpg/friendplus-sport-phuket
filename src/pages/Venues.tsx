@@ -14,6 +14,7 @@ import SportIcon from '@/components/SportIcon';
 import StatusBadge from '@/components/StatusBadge';
 import EmptyState from '@/components/EmptyState';
 import { SPORTS, hourlyPerPlayer } from '@/lib/sports';
+import { sportPhoto } from '@/lib/sportPhotos';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
@@ -237,7 +238,7 @@ function VenueModal({ venue, onClose, onToast }: { venue: Venue; onClose: () => 
   const { sessions } = useStore();
   const { t, formatTHB } = useI18n();
   const gallery = useMemo(
-    () => [venue.photo, ...venue.sports.map((s) => `/sport-${s}.jpg`)].slice(0, 3),
+    () => [venue.photo, ...venue.sports.map((s) => sportPhoto(s, venue.id))].slice(0, 3),
     [venue],
   );
   const [photo, setPhoto] = useState(gallery[0]);

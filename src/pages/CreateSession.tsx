@@ -15,6 +15,7 @@ import PlayerAvatar from '@/components/PlayerAvatar';
 import SessionCard from '@/components/SessionCard';
 import Countdown from '@/components/Countdown';
 import InviteModal from '@/components/InviteModal';
+import { sportPhoto } from '@/lib/sportPhotos';
 
 const DRAFT_KEY = 'friendplus.draft';
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -129,7 +130,7 @@ function GhostRecap({ draft }: { draft: Draft }) {
     <div className="overflow-hidden rounded-[20px] border border-[#EADFC8] bg-white shadow-[0_2px_8px_rgba(11,46,43,.06),0_16px_40px_rgba(11,46,43,.08)]">
       <div className="relative aspect-[16/10] overflow-hidden bg-[#FBF6EC]">
         {draft.sport ? (
-          <img src={`/sport-${draft.sport}.jpg`} alt="" className="h-full w-full object-cover" />
+          <img src={sportPhoto(draft.sport)} alt="" className="h-full w-full object-cover" />
         ) : (
           <div className="h-full w-full bg-[linear-gradient(120deg,#0E8C7F22,#FFB54733,#FF6B4A22)]" />
         )}
@@ -507,7 +508,7 @@ export default function CreateSession() {
                             : 'border border-[#EADFC8]',
                         )} />
                         <span className="relative block aspect-[16/9]">
-                          <img src={`/sport-${sport}.jpg`} alt={t(`sport.${sport}`)} className="h-full w-full object-cover" />
+                          <img src={sportPhoto(sport)} alt={t(`sport.${sport}`)} className="h-full w-full object-cover" />
                           <span className="absolute inset-0 bg-gradient-to-t from-[#0B2E2B]/85 via-[#0B2E2B]/25 to-transparent" />
                           <span className="absolute bottom-0 left-0 right-0 p-4">
                             <span className="flex items-center gap-2 font-display text-xl font-semibold text-white">

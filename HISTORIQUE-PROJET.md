@@ -142,6 +142,13 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Section « Le concept » fluide et photos qui changent chaque semaine (24 septembre 2026)
+
+- **Le concept** (page d'accueil) : plus de blocage du défilement. L'ancienne version « épinglait » la section avec GSAP et coupait l'image. Maintenant la page défile normalement : sur ordinateur, l'image reste entière à l'écran (CSS `sticky`) et change en fondu selon l'étape lue ; sur téléphone, chaque étape a sa propre image.
+- Défilement global un peu plus réactif (Lenis `lerp` 0.1 → 0.15).
+- **Photos par sport qui tournent chaque semaine** : 18 nouvelles vraies photos (Unsplash, libres de droits) dans `public/sports/`, soit 4 à 6 photos par sport. `src/lib/sportPhotos.ts` choisit la photo selon la semaine (changement le lundi) et varie d'une session à l'autre. Utilisé sur l'accueil, les sessions, les lieux et la création de session.
+- Pour ajouter des photos : déposer le fichier dans `public/sports/` et l'ajouter à la liste du sport dans `sportPhotos.ts`.
+
 ### ✅ 19 nouvelles langues (24 septembre 2026)
 
 - L'app passe de 4 à **23 langues** : français, anglais, espagnol, portugais (Brésil), allemand, néerlandais,
