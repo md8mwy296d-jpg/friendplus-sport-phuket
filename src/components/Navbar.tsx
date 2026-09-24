@@ -9,6 +9,8 @@ import { useSocial } from '@/lib/social';
 import type { Lang } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import PlayerAvatar from './PlayerAvatar';
+import RankInsignia from './rank/RankInsignia';
+import { rankFor } from '@/lib/rank';
 
 const NAV_LINKS = [
   { to: '/explorer', key: 'nav.explore' },
@@ -158,7 +160,9 @@ function AvatarMenu({ dark = false }: { dark?: boolean }) {
             role="menu"
           >
             <div className="border-b border-[#EADFC8] px-3.5 py-3">
-              <p className="text-sm font-bold text-[#0B2E2B]">{currentUser.name} {currentUser.nationality}</p>
+              <p className="flex items-center gap-1.5 text-sm font-bold text-[#0B2E2B]">
+                <RankInsignia rank={rankFor(currentUser.score)} size={18} /> {currentUser.name} {currentUser.nationality}
+              </p>
               <p className="text-xs text-[#0B2E2B]/50">{t(`common.level.${currentUser.level}`)} · {currentUser.score === null ? t('score.new') : `${t('score.short')} ${currentUser.score} %`}</p>
             </div>
             <button className={itemCls} onClick={() => { setOpen(false); navigate(`/joueur/${currentUser.id}`); }}>
