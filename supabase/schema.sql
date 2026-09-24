@@ -108,7 +108,7 @@ alter table public.profiles add column if not exists username text
 create unique index if not exists profiles_username_key on public.profiles (username);
 
 create or replace function public.username_reserved(p text)
-returns boolean language sql immutable as $$
+returns boolean language sql immutable set search_path = '' as $$
   select p = any (array['admin','administrateur','friendplus','friend','support','help','aide','moderateur',
                         'moderator','official','officiel','root','system','staff','owner','null','undefined']);
 $$;

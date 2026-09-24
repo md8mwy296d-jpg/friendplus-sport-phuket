@@ -142,6 +142,13 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Sécurité renforcée (24 septembre 2026)
+
+- **Contrôle complet** : aucune clé secrète (`service_role`) dans le code ni dans l'historique Git. Toutes les tables ont la sécurité par ligne (RLS) activée, et les fonctions sensibles (certifier, modérer, publier…) vérifient qui appelle.
+- **En-têtes de sécurité du site** (`vercel.json`) : `Content-Security-Policy` (bloque les scripts venant d'ailleurs), anti-intégration dans un autre site (`X-Frame-Options`, `frame-ancestors`), `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS renforcé.
+- Base : `username_reserved` a maintenant un `search_path` fixe (alerte Supabase corrigée).
+- **À faire par le propriétaire** : passer le dépôt GitHub en privé ; activer la double authentification (2FA) sur GitHub, Vercel, Supabase et la boîte mail ; activer « Leaked password protection » dans Supabase (Auth → Settings) si l'offre le permet.
+
 ### ✅ Section « Le concept » fluide et photos qui changent chaque semaine (24 septembre 2026)
 
 - **Le concept** (page d'accueil) : plus de blocage du défilement. L'ancienne version « épinglait » la section avec GSAP et coupait l'image. Maintenant la page défile normalement : sur ordinateur, l'image reste entière à l'écran (CSS `sticky`) et change en fondu selon l'étape lue ; sur téléphone, chaque étape a sa propre image.
