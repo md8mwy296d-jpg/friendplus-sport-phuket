@@ -11,6 +11,7 @@ import PresenceAvatar from './PresenceAvatar';
 import CertifiedBadge from '@/components/CertifiedBadge';
 import RankInsignia from '@/components/rank/RankInsignia';
 import { rankFor } from '@/lib/rank';
+import { handleOf } from '@/lib/players';
 
 function Row({ user, status, online, children }: { user: User; status?: string; online?: boolean; children: React.ReactNode }) {
   return (
@@ -24,6 +25,7 @@ function Row({ user, status, online, children }: { user: User; status?: string; 
             <span aria-hidden>{user.nationality}</span>
             <RankInsignia rank={rankFor(user.score)} size={20} />
           </span>
+          {user.username && <span className="block truncate text-xs font-semibold text-[#0A6E64]">{handleOf(user)}</span>}
           {status && (
             <span className={cn('block text-xs', online ? 'font-bold text-[#16A34A]' : 'text-[#0B2E2B]/45')}>{status}</span>
           )}
@@ -57,10 +59,10 @@ export default function FriendsPanel() {
   }, [hash]);
 
   const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim().toLowerCase().replace(/^@+/, '');
     const seen = (u: User) => (isOnline(u.id) ? Infinity : new Date(lastSeenOf(u.id) ?? 0).getTime());
     return friends
-      .filter((u) => (!onlyOnline || isOnline(u.id)) && (!q || u.name.toLowerCase().includes(q)))
+      .filter((u) => (!onlyOnline || isOnline(u.id)) && (!q || u.name.toLowerCase().includes(q) || u.username.includes(q)))
       .sort((a, b) => seen(b) - seen(a) || a.name.localeCompare(b.name));
   }, [friends, query, onlyOnline, isOnline, lastSeenOf]);
 

@@ -5,6 +5,7 @@ import { useStore } from '@/lib/store';
 import { useClub } from '@/lib/club';
 import { useI18n } from '@/lib/i18n';
 import SportIcon from '@/components/SportIcon';
+import MentionText from '@/components/mentions/MentionText';
 
 /** One shared moment: photo, text, linked session. */
 export default function MomentCard({ moment, onDelete }: { moment: Moment; onDelete?: (m: Moment) => void }) {
@@ -18,7 +19,7 @@ export default function MomentCard({ moment, onDelete }: { moment: Moment; onDel
     <article className="overflow-hidden rounded-[20px] border border-[#EADFC8] bg-white shadow-[0_2px_8px_rgba(11,46,43,.06)]">
       {moment.imageUrl && <img src={moment.imageUrl} alt="" loading="lazy" className="max-h-[520px] w-full object-cover" />}
       <div className="space-y-3 p-4 sm:p-5">
-        {moment.body && <p className="whitespace-pre-line text-[15px] leading-relaxed text-[#0B2E2B]">{moment.body}</p>}
+        {moment.body && <p className="whitespace-pre-line text-[15px] leading-relaxed text-[#0B2E2B]"><MentionText text={moment.body} /></p>}
         {session && (
           <Link to={`/session/${session.id}`} className="inline-flex max-w-full items-center gap-2 rounded-full bg-[#FBF6EC] px-3 py-1.5 text-xs font-semibold text-[#0A6E64] hover:bg-[#EADFC8]/60">
             <SportIcon sport={session.sport} className="h-4 w-4" />

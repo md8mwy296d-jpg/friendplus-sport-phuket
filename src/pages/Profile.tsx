@@ -14,6 +14,7 @@ import SportIcon from '@/components/SportIcon';
 import CountUp from '@/components/home/CountUp';
 import AvatarEditor from '@/components/AvatarEditor';
 import FriendsPanel from '@/components/social/FriendsPanel';
+import UsernameField from '@/components/social/UsernameField';
 import { SPORTS } from '@/lib/sports';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
@@ -247,6 +248,8 @@ export default function Profile() {
                       {' '}· {currentUser.score === null ? t('score.new') : `${t('score.short')} ${currentUser.score} %`}
                     </p>
                   </div>
+
+                  <UsernameField />
 
                   <div className="flex flex-wrap items-end gap-4">
                     <div>

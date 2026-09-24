@@ -142,6 +142,23 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Identifiants @ et mentions (24 septembre 2026)
+
+- **Identifiant unique** `profiles.username` (minuscules, chiffres, `_`, `.`, 3 à 20 caractères, mots réservés
+  interdits). Il est créé automatiquement à partir du nom (trigger `profiles_default_username`, fonction
+  `suggest_username` qui retire les accents, y compris turcs : « Şükrü Yılmaz » → `sukruyilmaz`, avec des
+  chiffres ajoutés si déjà pris) et modifiable dans **Profil → Identifiant** (vérification en direct via
+  `username_available()`, enregistrement via `set_username()`). Il n'est pas modifiable en écriture directe.
+  Migration `usernames`, exposé dans `public_profiles.username`. Actuellement : admin = `@hakan`, ami = `@hakan4311`.
+- **Recherche** : 🔍 dans le menu 👤+ de l'en-tête (« Chercher un joueur ou @identifiant »), et dans
+  « Nouveau message » (`searchPlayers` dans `lib/players.ts`). Lien direct : `/joueur/@hakan`.
+- **Mentions** : taper `@` dans un message, un commentaire, une publication ou un moment propose les joueurs
+  (amis en premier, flèches ↑↓ + Entrée). Les `@identifiants` s'affichent en liens vers le profil (`MentionText`).
+- **Notifications 🔔** (`supabase/mentions.sql`, migration `mentions`) : table `mentions` remplie par triggers.
+  Le joueur mentionné n'est prévenu que s'il peut voir le contenu (membre de la discussion ou du groupe,
+  publication publique, moment public ou ami), jamais en cas de blocage, 10 mentions au plus par texte.
+  4e icône de l'en-tête, en temps réel. L'ouverture du menu marque tout comme vu (`mark_mentions_seen`).
+
 ### ✅ Barre façon Facebook : messages, groupes, amis (24 septembre 2026)
 
 - `components/social/HeaderHub.tsx`, dans la barre du haut pour un joueur connecté, sur toutes les pages.

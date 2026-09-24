@@ -3,6 +3,8 @@ import { ImagePlus, Loader2, Megaphone, Pin, X } from 'lucide-react';
 import type { PostInput } from '@/lib/posts';
 import { useI18n } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
+import MentionMenu from '@/components/mentions/MentionMenu';
+import { useMentionOptions, useMentions } from '@/lib/mentions';
 
 const MAX_SOURCE_BYTES = 15 * 1024 * 1024;
 
@@ -24,6 +26,9 @@ export default function PostComposer({ target, heading, onPublish }: Props) {
   const [preview, setPreview] = useState('');
   const [pinned, setPinned] = useState(false);
   const [busy, setBusy] = useState(false);
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const mention = useMentions(body, (v) => setBody(v.slice(0, 2000)), bodyRef);
+  const options = useMentionOptions(mention.query);
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
@@ -57,7 +62,12 @@ export default function PostComposer({ target, heading, onPublish }: Props) {
     <form onSubmit={submit} className="space-y-3 rounded-[20px] border border-[#EADFC8] bg-white p-4 shadow-[0_2px_8px_rgba(11,46,43,.06)] sm:p-5">
       <p className="flex items-center gap-2 text-sm font-bold text-[#0B2E2B]"><Megaphone className="h-4 w-4 text-[#FF6B4A]" /> {heading}</p>
       <input value={title} onChange={(e) => setTitle(e.target.value.slice(0, 120))} placeholder={t('posts.titlePh')} className={cn(field, 'font-semibold')} />
-      <textarea value={body} onChange={(e) => setBody(e.target.value.slice(0, 2000))} placeholder={t('posts.bodyPh')} rows={4} className={cn(field, 'resize-none')} />
+      <div className="relative">
+        <MentionMenu options={options} index={mention.index} onPick={mention.pick} />
+        <textarea ref={bodyRef} value={body} onChange={(e) => setBody(e.target.value.slice(0, 2000))} {...mention.bind}
+          onKeyDown={(e) => { mention.handleKey(e, options.map((u) => u.username)); }}
+          placeholder={t('posts.bodyPh')} rows={4} className={cn(field, 'resize-none')} />
+      </div>
       {preview && (
         <div className="relative overflow-hidden rounded-2xl">
           <img src={preview} alt="" className="max-h-64 w-full object-cover" />
