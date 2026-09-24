@@ -2,16 +2,10 @@ import { useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useClub } from '@/lib/club';
-import { useVisitStats } from '@/lib/visits';
+import { flagOf, useVisitStats } from '@/lib/visits';
 import { cn } from '@/lib/utils';
 
 const RANGES = [7, 30, 90];
-
-/** Emoji flag from an ISO country code ("TH" → 🇹🇭). */
-function flag(code: string) {
-  if (!/^[A-Z]{2}$/.test(code)) return '🌍';
-  return String.fromCodePoint(...[...code].map((c) => 0x1f1a5 + c.charCodeAt(0)));
-}
 
 /** Admins only: anonymous visit counts per city. */
 export default function VisitsByCity() {
@@ -60,7 +54,7 @@ export default function VisitsByCity() {
             {rows.map((r) => (
               <li key={`${r.country}-${r.city}`} className="flex items-center gap-3">
                 <span className="w-40 shrink-0 truncate text-[13px] font-semibold text-[#0B2E2B] sm:w-56">
-                  {flag(r.country)} {r.city || t('visits.unknown')}
+                  {flagOf(r.country)} {r.city || t('visits.unknown')}
                 </span>
                 <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[#FBF6EC]">
                   <div className="h-full rounded-full bg-golden-hour" style={{ width: `${(r.visits / max) * 100}%` }} />
