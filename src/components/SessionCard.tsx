@@ -8,6 +8,7 @@ import SportIcon from './SportIcon';
 import StatusBadge from './StatusBadge';
 import PlayerAvatar from './PlayerAvatar';
 import Countdown from './Countdown';
+import { sportPhoto } from '@/lib/sportPhotos';
 
 interface SessionCardProps {
   session: Session;
@@ -59,7 +60,7 @@ export default function SessionCard({ session, className }: SessionCardProps) {
       {/* image 16:10 */}
       <div className="relative aspect-[16/10] overflow-hidden">
         <img
-          src={`/sport-${session.sport}.jpg`}
+          src={sportPhoto(session.sport, session.id)}
           alt={t(`sport.${session.sport}`)}
           loading="lazy"
           className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"

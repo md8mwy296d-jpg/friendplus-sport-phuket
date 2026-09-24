@@ -6,6 +6,7 @@ import { useI18n } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
 import { SPORTS, hourlyPerPlayer } from '@/lib/sports';
 import SportIcon from '@/components/SportIcon';
+import { sportPhoto } from '@/lib/sportPhotos';
 
 /** Light 3D tilt (max 4°), desktop only. */
 function Tilt({ children }: { children: React.ReactNode }) {
@@ -64,7 +65,7 @@ export default function SportsTiles() {
                   className="group relative block min-h-[280px] overflow-hidden rounded-[20px] border-2 border-transparent transition-colors duration-500 hover:border-[#2FBFA5]/60"
                 >
                   <img
-                    src={`/sport-${sport}.jpg`}
+                    src={sportPhoto(sport)}
                     alt={t(`sport.${sport}`)}
                     loading="lazy"
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"

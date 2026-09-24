@@ -32,6 +32,7 @@ import SessionCard from '@/components/SessionCard';
 import EmptyState from '@/components/EmptyState';
 import CertifiedBadge from '@/components/CertifiedBadge';
 import ScoreBadge from '@/components/ScoreBadge';
+import { sportPhoto } from '@/lib/sportPhotos';
 
 const EASE = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
@@ -229,7 +230,7 @@ export default function SessionDetail() {
       {/* Section 1 — hero */}
       <section className="relative min-h-[420px] overflow-hidden">
         <motion.img
-          src={`/sport-${session.sport}.jpg`}
+          src={sportPhoto(session.sport, session.id)}
           alt={t(`sport.${session.sport}`)}
           className="absolute inset-0 h-full w-full object-cover"
           initial={{ scale: 1.08 }}

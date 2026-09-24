@@ -1,18 +1,45 @@
-import { useRef } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useGSAP } from '@gsap/react';
+import { useEffect, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import StatusBadge from '@/components/StatusBadge';
+import { sportPhoto } from '@/lib/sportPhotos';
 
-gsap.registerPlugin(ScrollTrigger, useGSAP);
+// new photos every week
+const STEP_IMAGES = [sportPhoto('futsal', 'how'), sportPhoto('padel', 'how'), sportPhoto('dance', 'how')];
 
-const STEP_IMAGES = ['/sport-futsal.jpg', '/sport-padel.jpg', '/sport-dance.jpg'];
+/** Step 4: the "confirmed" card shown instead of a photo. */
+function ConfirmedVisual({ n }: { n: string }) {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-5 bg-lagoon-deep">
+      <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#22C55E] shadow-[0_0_60px_rgba(34,197,94,.5)]">
+        <Check className="h-12 w-12 text-white" strokeWidth={3} />
+      </div>
+      <StatusBadge status="confirmed" className="!border-[#22C55E]/50 !bg-white/10 !text-[#7DFFA8]" />
+      <span className="font-mono text-6xl font-bold text-white/40">{n}</span>
+    </div>
+  );
+}
 
+function StepPhoto({ src, n }: { src: string; n: string }) {
+  return (
+    <>
+      <img src={src} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0B2E2B]/45 via-transparent to-transparent" />
+      <span className="absolute bottom-5 left-5 font-mono text-6xl font-bold text-white/85">{n}</span>
+    </>
+  );
+}
+
+/**
+ * "The concept": four steps. The page scrolls normally (no pinning):
+ * on desktop the picture stays in view (CSS sticky) and cross-fades to the step being read;
+ * on phones each step shows its own picture.
+ */
 export default function HowItWorks() {
   const { t } = useI18n();
-  const rootRef = useRef<HTMLElement>(null);
+  const [active, setActive] = useState(0);
+  const stepRefs = useRef<(HTMLLIElement | null)[]>([]);
 
   const steps = [
     { n: '01', title: t('home.how.step1.title'), text: t('home.how.step1.text') },
@@ -21,61 +48,26 @@ export default function HowItWorks() {
     { n: '04', title: t('home.how.step4.title'), text: t('home.how.step4.text') },
   ];
 
-  useGSAP(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const mm = gsap.matchMedia();
-
-    mm.add('(min-width: 1024px)', () => {
-      if (reduced) return;
-      const stepEls = gsap.utils.toArray<HTMLElement>('.how-step');
-      const visuals = gsap.utils.toArray<HTMLElement>('.how-visual');
-      gsap.set(stepEls, { opacity: 0.25, x: 24 });
-      gsap.set(visuals, { autoAlpha: 0, y: 20, scale: 0.98 });
-      gsap.set(visuals[0], { autoAlpha: 1, y: 0, scale: 1 });
-
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: rootRef.current,
-          start: 'top top',
-          end: '+=250%',
-          pin: true,
-          scrub: 0.6,
-          anticipatePin: 1,
-        },
-      });
-
-      tl.fromTo('.how-progress-fill', { scaleY: 0 }, { scaleY: 1, duration: 4, ease: 'none' }, 0);
-
-      stepEls.forEach((step, i) => {
-        tl.to(step, { opacity: 1, x: 0, duration: 0.5 }, i);
-        if (i > 0) {
-          tl.to(visuals[i - 1], { autoAlpha: 0, y: -20, scale: 0.98, duration: 0.4 }, i);
-          tl.to(visuals[i], { autoAlpha: 1, y: 0, scale: 1, duration: 0.5 }, i);
+  // the step crossing the middle of the screen is the active one
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActive(Number((entry.target as HTMLElement).dataset.step));
         }
-      });
-      // step 4: confirmed badge pop
-      tl.fromTo('.how-badge-pop', { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(2.5)' }, 3.2);
-      tl.to({}, { duration: 0.6 }); // breathing room at the end
-    });
-
-    mm.add('(max-width: 1023px)', () => {
-      if (reduced) return;
-      gsap.utils.toArray<HTMLElement>('.how-step').forEach((step) => {
-        gsap.fromTo(step, { opacity: 0, y: 40 }, {
-          opacity: 1, y: 0, duration: 0.7, ease: 'expo.out',
-          scrollTrigger: { trigger: step, start: 'top 80%', once: true },
-        });
-      });
-      gsap.set('.how-progress-fill', { scaleY: 1, transformOrigin: 'top' });
-    });
-  }, { scope: rootRef });
+      },
+      { rootMargin: '-45% 0px -45% 0px' },
+    );
+    stepRefs.current.forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <section ref={rootRef} id="how-it-works" className="relative overflow-hidden bg-[#FBF6EC]">
+    <section id="how-it-works" className="relative bg-[#FBF6EC]">
       {/* palm texture corner */}
       <div aria-hidden className="palm-texture pointer-events-none absolute -left-24 -top-24 h-[420px] w-[420px] bg-[#0B2E2B] opacity-[0.06]" />
 
-      <div className="mx-auto flex min-h-[100dvh] max-w-[1280px] flex-col justify-center px-6 py-20 lg:px-12">
+      <div className="relative mx-auto max-w-[1280px] px-6 py-20 lg:px-12 lg:py-28">
         <div className="mb-12 max-w-xl">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0E8C7F]">{t('home.how.eyebrow')}</p>
           <h2 className="mt-3 font-display text-[clamp(2rem,4.5vw,3rem)] font-bold leading-tight tracking-[-0.02em] text-[#0B2E2B]">
@@ -83,35 +75,56 @@ export default function HowItWorks() {
           </h2>
         </div>
 
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          {/* left: visual frame */}
-          <div className="relative hidden aspect-[4/5] max-h-[560px] w-full overflow-hidden rounded-[24px] border border-[#EADFC8] bg-white shadow-paper lg:block">
-            {STEP_IMAGES.map((src, i) => (
-              <div key={src} className="how-visual absolute inset-0">
-                <img src={src} alt="" className="h-full w-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0B2E2B]/45 via-transparent to-transparent" />
-                <span className="absolute bottom-5 left-5 font-mono text-6xl font-bold text-white/85">{steps[i].n}</span>
+        <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+          {/* left: picture that follows the reader, always fully on screen */}
+          <div className="hidden lg:block">
+            <div className="sticky top-[calc(72px+(100vh-72px-min(72vh,600px))/2)]">
+              <div className="relative h-[min(72vh,600px)] w-full overflow-hidden rounded-[24px] border border-[#EADFC8] bg-white shadow-paper">
+                {steps.map((step, i) => (
+                  <div
+                    key={step.n}
+                    aria-hidden={active !== i}
+                    className={cn(
+                      'absolute inset-0 transition-all duration-700 ease-out',
+                      active === i ? 'scale-100 opacity-100' : 'scale-[1.03] opacity-0',
+                    )}
+                  >
+                    {i < STEP_IMAGES.length ? <StepPhoto src={STEP_IMAGES[i]} n={step.n} /> : <ConfirmedVisual n={step.n} />}
+                  </div>
+                ))}
               </div>
-            ))}
-            {/* step 4 visual: confirmed card */}
-            <div className="how-visual absolute inset-0 flex flex-col items-center justify-center gap-5 bg-lagoon-deep">
-              <div className="how-badge-pop flex h-24 w-24 items-center justify-center rounded-full bg-[#22C55E] shadow-[0_0_60px_rgba(34,197,94,.5)]">
-                <Check className="h-12 w-12 text-white" strokeWidth={3} />
-              </div>
-              <StatusBadge status="confirmed" className="!border-[#22C55E]/50 !bg-white/10 !text-[#7DFFA8]" />
-              <span className="font-mono text-6xl font-bold text-white/40">{steps[3].n}</span>
             </div>
           </div>
 
           {/* right: steps + progress line */}
           <div className="relative">
             <div className="absolute bottom-4 left-[7px] top-4 w-0.5 bg-[#EADFC8]">
-              <div className="how-progress-fill h-full w-full origin-top bg-[#0E8C7F]" />
+              <div
+                className="h-full w-full origin-top bg-[#0E8C7F] transition-transform duration-700 ease-out"
+                style={{ transform: `scaleY(${(active + 1) / steps.length})` }}
+              />
             </div>
-            <ol className="space-y-10">
-              {steps.map((step) => (
-                <li key={step.n} className="how-step relative pl-12">
-                  <span className="absolute left-0 top-1 h-4 w-4 rounded-full border-[3px] border-[#0E8C7F] bg-[#FBF6EC]" />
+            <ol className="space-y-12 lg:space-y-0">
+              {steps.map((step, i) => (
+                <li
+                  key={step.n}
+                  ref={(el) => { stepRefs.current[i] = el; }}
+                  data-step={i}
+                  className={cn(
+                    'relative pl-12 transition-opacity duration-500 lg:flex lg:min-h-[60vh] lg:flex-col lg:justify-center',
+                    active === i ? 'lg:opacity-100' : 'lg:opacity-40',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'absolute left-0 top-1 h-4 w-4 rounded-full border-[3px] border-[#0E8C7F] transition-colors duration-500 lg:top-1/2 lg:-translate-y-1/2',
+                      i <= active ? 'bg-[#0E8C7F]' : 'bg-[#FBF6EC]',
+                    )}
+                  />
+                  {/* phones: each step has its own picture */}
+                  <div className="relative mb-5 aspect-[16/10] overflow-hidden rounded-[20px] border border-[#EADFC8] bg-white shadow-paper lg:hidden">
+                    {i < STEP_IMAGES.length ? <StepPhoto src={STEP_IMAGES[i]} n={step.n} /> : <ConfirmedVisual n={step.n} />}
+                  </div>
                   <span className="font-mono text-5xl font-bold text-[#FF6B4A]/85">{step.n}</span>
                   <h3 className="mt-1 font-display text-2xl font-semibold text-[#0B2E2B]">{step.title}</h3>
                   <p className="mt-2 max-w-md text-[15px] leading-relaxed text-[#0B2E2B]/60">{step.text}</p>

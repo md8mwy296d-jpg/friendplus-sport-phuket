@@ -16,6 +16,7 @@ import EmptyState from '@/components/EmptyState';
 import SessionCard from '@/components/SessionCard';
 import InviteModal from '@/components/InviteModal';
 import CountUp from '@/components/home/CountUp';
+import { sportPhoto } from '@/lib/sportPhotos';
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 const CANCELLED_KEY = 'friendplus.cancelled';
@@ -75,7 +76,7 @@ function WideSessionCard({ session, cancelled, flash, organizing, pendingInvites
       >
         {/* image */}
         <div className="relative h-36 w-full shrink-0 overflow-hidden rounded-2xl sm:h-auto sm:w-40">
-          <img src={`/sport-${session.sport}.jpg`} alt={t(`sport.${session.sport}`)} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          <img src={sportPhoto(session.sport, session.id)} alt={t(`sport.${session.sport}`)} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0B2E2B]/40 to-transparent" />
           <div className="absolute left-2 top-2 flex gap-1.5">
             <StatusBadge status={status} className="bg-white/90 backdrop-blur" />
