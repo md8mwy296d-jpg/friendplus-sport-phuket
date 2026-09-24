@@ -52,6 +52,17 @@ non connectés. Parcours testé en base (profil, création de session padel, cha
   À défaut, 8 couleurs au choix, enregistrées en base (avant : dans le navigateur seulement).
   Visible partout où `PlayerAvatar` est utilisé (sessions, Club, invitations).
 
+### ✅ Grades et médailles façon jeu vidéo (24 septembre 2026)
+
+Calculés dans l'app à partir de la note et des statistiques (`src/lib/rank.ts`, rien en base) :
+- **7 grades** selon la note FRIEND+ : Recrue (0 %, 1 chevron bronze), Soldat (15 %, 2 chevrons bronze),
+  Caporal (30 %, 3 chevrons argent), Sergent (45 %, 1 étoile argent), Lieutenant (60 %, 2 étoiles or),
+  Capitaine (75 %, 3 étoiles or), Légende (90 %, étoile et lauriers). Insigne en SVG (`RankInsignia`) à côté
+  du nom : page joueur, équipe d'une session, après-match, amis, menu avatar.
+- **8 médailles** : 1er match, Habitué (10 matchs), Vétéran (50), Organisateur (3 sessions), Fair-play
+  (90 % avec 5 avis), Profil 100 %, Multisport (3 sports), Certifié. Grisées tant qu'elles ne sont pas gagnées.
+- Page joueur : section « Grade » avec progression vers le grade suivant, échelle des grades, médailles.
+
 ### ✅ Nouveautés du Club, comptes certifiés et Note FRIEND+ (24 septembre 2026)
 
 **Nouveautés** (`supabase/news.sql`, exécuté) : onglet « Nouveautés » du Club. Seuls les **admins** (table
@@ -182,6 +193,7 @@ les 132 fichiers à plat à la racine du dépôt. L'arborescence a été reconst
 | `supabase/social.sql`, `src/lib/social.ts` | Amis, moments, fin de match, avis entre coéquipiers |
 | `supabase/news.sql`, `src/lib/news.ts`, `src/components/news/` | Nouveautés du Club, certification |
 | `src/lib/score.ts`, `src/components/ScoreBadge.tsx`, `src/components/social/ScorePanel.tsx` | Note FRIEND+ en % |
+| `src/lib/rank.ts`, `src/components/rank/` | Grades (insignes) et médailles |
 | `src/pages/PlayerProfile.tsx`, `src/components/social/` | Page publique d'un joueur, boutons ami / message, moments, bannière après-match |
 | `src/lib/sports.ts` | Liste des sports, joueurs par sport, durées, calcul des prix |
 | `DEPLOIEMENT.md` | Guide de mise en ligne pas à pas |

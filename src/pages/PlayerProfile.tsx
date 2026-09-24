@@ -14,6 +14,9 @@ import { FriendButton, MessageButton } from '@/components/social/FriendButton';
 import MomentComposer from '@/components/social/MomentComposer';
 import MomentCard from '@/components/social/MomentCard';
 import ScorePanel from '@/components/social/ScorePanel';
+import RankInsignia from '@/components/rank/RankInsignia';
+import RankSection from '@/components/rank/RankSection';
+import { rankFor } from '@/lib/rank';
 
 /** Public page of a player: identity, friend / message actions and shared moments. */
 export default function PlayerProfile() {
@@ -72,9 +75,10 @@ export default function PlayerProfile() {
           <PlayerAvatar user={player} size={112} ring={false} className="font-display text-4xl font-bold ring-4 ring-white/30" />
           <h1 className="mt-4 font-display text-[clamp(1.8rem,6vw,2.4rem)] font-bold leading-tight text-white">
             {player.name} <CertifiedBadge certified={player.certified} /> <span className="align-middle text-2xl">{player.nationality}</span>
+            <RankInsignia rank={rankFor(player.score)} size={30} className="ml-2 align-middle" />
           </h1>
           <p className="mt-1 text-sm text-white/65">
-            {t(`common.level.${player.level}`)} · {player.score === null ? t('score.new') : `${t('score.short')} ${player.score} %`}
+            {t(`rank.${rankFor(player.score).key}`)} · {t(`common.level.${player.level}`)} · {player.score === null ? t('score.new') : `${t('score.short')} ${player.score} %`}
           </p>
           {player.sports.length > 0 && (
             <div className="mt-4 flex flex-wrap justify-center gap-2" aria-label={t('player.sports')}>
@@ -127,6 +131,8 @@ export default function PlayerProfile() {
             <p className="mt-3 text-center text-xs text-[#0B2E2B]/50">{t('player.loginToConnect', { name: player.name.split(' ')[0] })}</p>
           )}
         </div>
+
+        <RankSection user={player} />
 
         <section className="space-y-4">
           <h2 className="font-display text-2xl font-bold text-[#0B2E2B]">{t('moments.title')}</h2>

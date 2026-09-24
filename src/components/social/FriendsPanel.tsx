@@ -7,6 +7,8 @@ import type { User } from '@/lib/types';
 import PlayerAvatar from '@/components/PlayerAvatar';
 import { FriendButton, MessageButton } from './FriendButton';
 import CertifiedBadge from '@/components/CertifiedBadge';
+import RankInsignia from '@/components/rank/RankInsignia';
+import { rankFor } from '@/lib/rank';
 
 function Row({ user, children }: { user: User; children: React.ReactNode }) {
   return (
@@ -14,6 +16,7 @@ function Row({ user, children }: { user: User; children: React.ReactNode }) {
       <Link to={`/joueur/${user.id}`} className="flex min-w-0 flex-1 items-center gap-3">
         <PlayerAvatar user={user} size={42} ring={false} />
         <span className="truncate text-[15px] font-bold text-[#0B2E2B]">{user.name} <CertifiedBadge certified={user.certified} /> {user.nationality}</span>
+        <RankInsignia rank={rankFor(user.score)} size={20} />
       </Link>
       <span className="flex items-center gap-2">{children}</span>
     </li>
