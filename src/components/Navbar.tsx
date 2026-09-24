@@ -159,7 +159,7 @@ function AvatarMenu({ dark = false }: { dark?: boolean }) {
           >
             <div className="border-b border-[#EADFC8] px-3.5 py-3">
               <p className="text-sm font-bold text-[#0B2E2B]">{currentUser.name} {currentUser.nationality}</p>
-              <p className="text-xs text-[#0B2E2B]/50">{t(`common.level.${currentUser.level}`)} · ★ {currentUser.rating.toFixed(1)}</p>
+              <p className="text-xs text-[#0B2E2B]/50">{t(`common.level.${currentUser.level}`)} · {currentUser.score === null ? t('score.new') : `${t('score.short')} ${currentUser.score} %`}</p>
             </div>
             <button className={itemCls} onClick={() => { setOpen(false); navigate(`/joueur/${currentUser.id}`); }}>
               <User className="h-4 w-4 text-[#0E8C7F]" /> {t('player.myPage')}

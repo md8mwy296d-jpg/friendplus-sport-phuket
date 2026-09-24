@@ -226,3 +226,58 @@ create policy "j'envoie mes photos de moments" on storage.objects for insert to 
 drop policy if exists "je supprime mes photos de moments" on storage.objects;
 create policy "je supprime mes photos de moments" on storage.objects for delete to authenticated
   using (bucket_id = 'moments' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ---------------------------------------------------------------------
+-- 7. Note FRIEND+ : avis anonymes des coéquipiers après un match
+--    Deux questions par coéquipier : règles du jeu respectées ? personnes respectées ?
+--    Modifiable pendant 7 jours après le match. Nul ne voit qui l'a noté.
+-- ---------------------------------------------------------------------
+create table if not exists public.match_reviews (
+  session_id   uuid not null references public.sessions(id) on delete cascade,
+  reviewer_id  uuid not null references public.profiles(id) on delete cascade,
+  reviewee_id  uuid not null references public.profiles(id) on delete cascade,
+  rules_ok     boolean not null,
+  respect_ok   boolean not null,
+  created_at   timestamptz not null default now(),
+  primary key (session_id, reviewer_id, reviewee_id),
+  check (reviewer_id <> reviewee_id)
+);
+create index if not exists match_reviews_reviewee on public.match_reviews (reviewee_id);
+
+alter table public.match_reviews enable row level security;
+drop policy if exists "mes avis donnés" on public.match_reviews;
+create policy "mes avis donnés" on public.match_reviews for select to authenticated
+  using (reviewer_id = auth.uid());
+grant select on public.match_reviews to authenticated;
+
+create or replace function public.review_teammate(p_session uuid, p_user uuid, p_rules boolean, p_respect boolean)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  me uuid := public._require_onboarded();
+  s public.sessions%rowtype;
+  v_end timestamptz;
+begin
+  if p_user is null or p_user = me or p_rules is null or p_respect is null then raise exception 'invalid_input'; end if;
+  select * into s from public.sessions where id = p_session;
+  if not found then raise exception 'not_found'; end if;
+  v_end := s.starts_at + make_interval(mins => s.duration_min);
+  if s.status = 'cancelled' or v_end > now() or v_end < now() - interval '7 days' then raise exception 'session_closed'; end if;
+  if not exists (select 1 from public.session_players where session_id = p_session and user_id = me and kind = 'player')
+     or not exists (select 1 from public.session_players where session_id = p_session and user_id = p_user and kind = 'player') then
+    raise exception 'not_allowed';
+  end if;
+
+  insert into public.match_reviews (session_id, reviewer_id, reviewee_id, rules_ok, respect_ok)
+  values (p_session, me, p_user, p_rules, p_respect)
+  on conflict (session_id, reviewer_id, reviewee_id)
+  do update set rules_ok = excluded.rules_ok, respect_ok = excluded.respect_ok, created_at = now();
+
+  update public.profiles p set
+    fairplay_up = (select coalesce(sum(rules_ok::int + respect_ok::int), 0) from public.match_reviews where reviewee_id = p_user),
+    fairplay_total = (select count(*) * 2 from public.match_reviews where reviewee_id = p_user)
+  where p.id = p_user;
+end $$;
+
+revoke execute on function public.review_teammate(uuid,uuid,boolean,boolean) from public, anon;
+grant execute on function public.review_teammate(uuid,uuid,boolean,boolean) to authenticated;
+

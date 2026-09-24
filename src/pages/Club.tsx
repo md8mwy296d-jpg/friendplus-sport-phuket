@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { motion } from 'framer-motion';
-import { Lock, MessageCirclePlus, Plus, Search } from 'lucide-react';
+import { Lock, Megaphone, MessageCirclePlus, Plus, Search } from 'lucide-react';
 import { useClub, type Conversation, type PublicGroup } from '@/lib/club';
 import { useStore } from '@/lib/store';
 import { useI18n } from '@/lib/i18n';
@@ -13,9 +13,12 @@ import UserPickerModal from '@/components/club/UserPickerModal';
 import { ConversationAvatar, UnreadBadge } from '@/components/club/ClubUI';
 import { conversationTitle, useListTime } from '@/lib/club-format';
 import { SPORTS } from '@/lib/sports';
+import { useNews } from '@/lib/news';
+import NewsCard from '@/components/news/NewsCard';
+import NewsComposer from '@/components/news/NewsComposer';
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
-type Tab = 'chats' | 'discover';
+type Tab = 'chats' | 'news' | 'discover';
 type Filter = 'all' | 'group' | 'direct' | 'session';
 
 function ConversationRow({ c }: { c: Conversation }) {
@@ -94,7 +97,12 @@ export default function Club() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const { conversations, ready, createGroup, startDirect, joinGroup, discoverGroups } = useClub();
-  const tab: Tab = params.get('tab') === 'discover' ? 'discover' : 'chats';
+  const rawTab = params.get('tab');
+  const tab: Tab = rawTab === 'discover' || rawTab === 'news' ? rawTab : 'chats';
+  const news = useNews();
+  const { markSeen } = news;
+  useEffect(() => { if (tab === 'news' && !news.loading) markSeen(); }, [tab, news.loading, markSeen]);
+  const teaser = news.unseen > 0 ? news.items.find((a) => a.pinned) ?? news.items[0] : undefined;
   const [filter, setFilter] = useState<Filter>('all');
   const [groupOpen, setGroupOpen] = useState(false);
   const [dmOpen, setDmOpen] = useState(false);
@@ -147,16 +155,19 @@ export default function Club() {
       <div className="container max-w-3xl py-8">
         <div className="flex flex-wrap items-center gap-3">
           <div className="inline-flex rounded-full border border-[#EADFC8] bg-white p-1">
-            {(['chats', 'discover'] as Tab[]).map((id) => (
+            {(['chats', 'news', 'discover'] as Tab[]).map((id) => (
               <button
                 key={id}
                 onClick={() => setTab(id)}
                 className={cn(
-                  'h-10 rounded-full px-5 text-sm font-bold transition-colors',
+                  'relative h-10 rounded-full px-4 text-sm font-bold transition-colors sm:px-5',
                   tab === id ? 'bg-[#0E8C7F] text-white' : 'text-[#0B2E2B]/60 hover:text-[#0B2E2B]',
                 )}
               >
                 {t(`club.tab.${id}`)}
+                {id === 'news' && news.unseen > 0 && tab !== 'news' && (
+                  <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-[#FF6B4A] ring-2 ring-white" aria-hidden />
+                )}
               </button>
             ))}
           </div>
@@ -179,8 +190,36 @@ export default function Club() {
           </div>
         </div>
 
-        {tab === 'chats' ? (
+        {tab === 'news' ? (
+          <div className="mt-6 space-y-4">
+            {news.canPost
+              ? <NewsComposer isAdmin={news.isAdmin} onPost={news.post} />
+              : <p className="flex items-center gap-2 text-[13px] text-[#0B2E2B]/50"><Megaphone className="h-4 w-4 text-[#FF6B4A]" /> {t('news.whoCanPost')}</p>}
+            {news.loading ? (
+              <p className="py-16 text-center text-sm text-[#0B2E2B]/50">{t('common.loading')}</p>
+            ) : news.items.length === 0 ? (
+              <p className="rounded-[20px] border border-dashed border-[#EADFC8] px-6 py-12 text-center text-sm text-[#0B2E2B]/50">{t('news.empty')}</p>
+            ) : (
+              news.items.map((a) => (
+                <NewsCard key={a.id} item={a} isAdmin={news.isAdmin} onDelete={(x) => void news.remove(x)} onPin={(x, p) => void news.setPinned(x, p)} />
+              ))
+            )}
+          </div>
+        ) : tab === 'chats' ? (
           <>
+            {teaser && (
+              <button
+                onClick={() => setTab('news')}
+                className="mt-6 flex w-full items-center gap-3 rounded-[20px] border border-[#FFB547] bg-[#FFB547]/10 px-4 py-3 text-left"
+              >
+                <Megaphone className="h-5 w-5 shrink-0 text-[#FF6B4A]" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.14em] text-[#B97A0B]">{t('news.latest')}</span>
+                  <span className="block truncate text-sm font-bold text-[#0B2E2B]">{teaser.title}</span>
+                </span>
+                <span className="shrink-0 text-xs font-bold text-[#0A6E64]">{t('news.seeAll')} →</span>
+              </button>
+            )}
             <div className="-mx-4 mt-6 flex gap-2 overflow-x-auto px-4 pb-1">
               {(['all', 'group', 'direct', 'session'] as Filter[]).map((f) => (
                 <button key={f} onClick={() => setFilter(f)} className={chip(filter === f)}>

@@ -31,6 +31,11 @@ alter table public.profiles add column if not exists avatar_path text
   check (avatar_path is null or (char_length(avatar_path) <= 200 and avatar_path like id::text || '/%'));
 alter table public.profiles add column if not exists avatar_color smallint
   check (avatar_color is null or avatar_color between 0 and 7);
+-- Compte certifié (badge ✓) : attribué uniquement par un admin via set_certified() (news.sql)
+alter table public.profiles add column if not exists certified boolean not null default false;
+-- Fair-play : réponses « oui » / réponses reçues après les matchs (tenus à jour par review_teammate(), social.sql)
+alter table public.profiles add column if not exists fairplay_up integer not null default 0;
+alter table public.profiles add column if not exists fairplay_total integer not null default 0;
 
 -- Salles partenaires (gérées par toi depuis le tableau Supabase)
 create table if not exists public.venues (
@@ -99,7 +104,16 @@ select p.id, p.name, p.nationality, p.country_code, p.lang, p.sports, p.level,
        (select count(*) from public.session_players sp
           where sp.user_id = p.id and sp.kind = 'player')::int as joined_count,
        (select count(*) from public.sessions s where s.creator_id = p.id)::int as organized_count,
-       p.avatar_path, p.avatar_color
+       p.avatar_path, p.avatar_color, p.certified,
+       -- Note FRIEND+ en % : 70 % fair-play (avis des coéquipiers) + 30 % activité (10 matchs = 100 %)
+       case when p.fairplay_total > 0 then round(100.0 * p.fairplay_up / p.fairplay_total)::int end as fairplay_pct,
+       least(100, 10 * (select count(*) from public.session_players sp
+                          where sp.user_id = p.id and sp.kind = 'player'))::int as activity_pct,
+       case when p.fairplay_total > 0 then round(
+         0.7 * (100.0 * p.fairplay_up / p.fairplay_total)
+         + 0.3 * least(100, 10 * (select count(*) from public.session_players sp
+                                    where sp.user_id = p.id and sp.kind = 'player')))::int end as score,
+       p.fairplay_total / 2 as review_count
 from public.profiles p;
 
 -- Tarifs fixés par FRIEND+ (les joueurs ne choisissent pas le prix).

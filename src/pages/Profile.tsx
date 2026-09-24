@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
 import {
   Bell, CalendarPlus, Check, CheckCircle2, ChevronDown, Dumbbell, Eye,
-  Globe, LogOut, MailCheck, MapPin, Save, Star, Trophy, X,
+  Globe, LogOut, MailCheck, MapPin, Save, Trophy, X,
 } from 'lucide-react';
 import type { Lang, Level, Sport } from '@/lib/types';
 import { useStore } from '@/lib/store';
@@ -244,7 +244,7 @@ export default function Profile() {
                     />
                     <p className="mt-1 px-2 text-[13px] text-[#0B2E2B]/50">
                       {t('profile.memberSince')} · {formatDate(state.seededAt, { month: 'long', year: 'numeric' })}
-                      {' '}· <Star className="inline h-3.5 w-3.5 fill-[#FFB547] text-[#FFB547]" /> {currentUser.rating.toFixed(1)}
+                      {' '}· {currentUser.score === null ? t('score.new') : `${t('score.short')} ${currentUser.score} %`}
                     </p>
                   </div>
 
