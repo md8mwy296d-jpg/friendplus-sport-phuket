@@ -142,6 +142,19 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Pages de démonstration et vraies photos de golf (24 septembre 2026)
+
+- `supabase/demo-posts.sql` (migration `demo_club_pages`) : 3 pages de démo appartenant au compte admin,
+  **Kata Beach Padel Club**, **Kathu Hills Golf Club** et **Rawai Futsal Dome**, avec 8 publications
+  (tournoi, cours, green fee, ligue du jeudi…). Elles utilisent les photos du site (`image_path` = `/xxx.jpg`).
+  La contrainte `posts_check` accepte ces chemins, mais `publish_post()` exige toujours le dossier Storage
+  de l'auteur : les joueurs ne peuvent pas s'en servir.
+- **Pour tout retirer** : `delete from public.club_pages where id::text like 'dededede-%';`
+- Photos réelles (Unsplash, licence libre) : `sport-golf.jpg` (balle près du drapeau), `venue-golf.jpg`
+  (vue aérienne, nouvelle photo du terrain `v-golf`) et `golf-swing.jpg`.
+- Club : les groupes publics restent ouverts à tous sans invitation (confirmé par le propriétaire). Seuls
+  les groupes privés sont réservés aux invités et à l'admin.
+
 ### ✅ Corrigé : site en ligne sans clés Supabase
 
 Les variables Vercel avaient été saisies en minuscules (`vite_supabase_url`…). Vite ne lit que les noms

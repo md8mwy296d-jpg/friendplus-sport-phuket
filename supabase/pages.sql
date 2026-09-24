@@ -91,7 +91,7 @@ create table if not exists public.posts (
   group_id    uuid references public.conversations(id) on delete cascade,
   title       text not null default '' check (char_length(title) <= 120),
   body        text not null default '' check (char_length(body) <= 2000),
-  image_path  text check (image_path is null or (char_length(image_path) <= 200 and image_path like author_id::text || '/%')),
+  image_path  text check (image_path is null or (char_length(image_path) <= 200 and image_path like author_id::text || '/%') or image_path ~ '^/[a-z0-9-]+\.jpg$'),
   pinned      boolean not null default false,
   created_at  timestamptz not null default now(),
   check (page_id is null or group_id is null),

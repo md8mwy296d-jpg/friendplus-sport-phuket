@@ -440,7 +440,7 @@ insert into public.venues (id, name, area, sports, address, rating, price_from, 
  ('v-town',    'Old Town Dance House',   'Phuket Town', array['dance'],          'Thalang Rd, Phuket Town',       4.8, 100, '/venue-town.jpg',    array['Miroirs','Sono pro','Studio climatisé'], '09:00 – 21:00'),
  ('v-rawai',   'Rawai Futsal Dome',      'Rawai',       array['futsal'],         'Wiset Rd, Rawai',               4.5, 130, '/venue-rawai.jpg',   array['Terrain couvert','Éclairage LED','Parking'], '08:00 – 23:00'),
  ('v-bangtao', 'Bang Tao Sports Resort', 'Bang Tao',    array['padel','gym'],    'Laguna Area, Choeng Thale',     4.9, 250, '/venue-bangtao.jpg', array['Resort premium','Yoga deck','Piscine','Spa'], '06:00 – 22:00'),
- ('v-golf',    'Kathu Hills Golf Club',  'Kathu',       array['golf'],           'Vichitsongkram Rd, Kathu',      4.7, 120, '/sport-golf.jpg',    array['Parcours 18 trous','Practice','Location de clubs','Club-house'], '06:00 – 18:00')
+ ('v-golf',    'Kathu Hills Golf Club',  'Kathu',       array['golf'],           'Vichitsongkram Rd, Kathu',      4.7, 120, '/venue-golf.jpg',    array['Parcours 18 trous','Practice','Location de clubs','Club-house'], '06:00 – 18:00')
 on conflict (id) do nothing;
 
 -- « À partir de » affiché sur les salles = tarif horaire par joueur le moins cher de ses sports
