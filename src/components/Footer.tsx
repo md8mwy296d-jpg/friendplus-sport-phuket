@@ -75,7 +75,7 @@ export default function Footer() {
                     FRIEND<span className="text-[#FF6B4A]">+</span>
                   </span>
                   <span className="block text-[10px] font-semibold uppercase tracking-[0.22em] text-white/50">
-                    {t('nav.tagline')}
+                    Sport Phuket
                   </span>
                 </span>
               </Link>

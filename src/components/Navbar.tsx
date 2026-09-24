@@ -22,11 +22,10 @@ const NAV_LINKS = [
 ];
 
 function Logo({ dark = false, compact = false }: { dark?: boolean; compact?: boolean }) {
-  const { t } = useI18n();
   return (
     <Link to="/" className="flex items-center gap-2.5">
       <img src="/logo.svg" alt="FRIEND+" className="h-9 w-9" />
-      {/* the brand always reads FRIEND+, even in Arabic / Urdu */}
+      {/* the logo is always in English (FRIEND+ SPORT PHUKET), left to right, whatever the language */}
       <span dir="ltr" className={cn('leading-none', compact && 'hidden sm:block')}>
         <span className={cn('font-display text-xl font-extrabold tracking-tight', dark ? 'text-white' : 'text-[#0B2E2B]')}>
           FRIEND
@@ -39,7 +38,7 @@ function Logo({ dark = false, compact = false }: { dark?: boolean; compact?: boo
           </motion.span>
         </span>
         <span className={cn('block text-[10px] font-semibold uppercase tracking-[0.22em]', dark ? 'text-white/60' : 'text-[#0B2E2B]/50')}>
-          {t('nav.tagline')}
+          Sport Phuket
         </span>
       </span>
     </Link>

@@ -151,7 +151,7 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
   (813 textes chacun) **chargés seulement quand on choisit la langue** (`loadLocale`, `import.meta.glob`).
   Un texte manquant retombe sur l'anglais, puis le français.
 - **Droite à gauche** automatique pour l'arabe, la darija et l'ourdou (`RTL_LANGS`, `<html dir="rtl">`).
-  Le logo FRIEND+ reste en `dir="ltr"`.
+  Le logo reste toujours en anglais (« FRIEND+ SPORT PHUKET », `dir="ltr"`, sous-titre écrit en dur) dans toutes les langues.
 - **Première visite** : la langue du téléphone est choisie si elle existe (ar-MA/DZ/TN → darija).
 - Contrainte `profiles_lang_check` élargie (migration `profiles_more_languages`).
 - Pour ajouter un texte : l'ajouter dans les 4 dictionnaires de base **et** dans les 19 JSON (sinon il
