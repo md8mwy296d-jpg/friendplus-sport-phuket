@@ -146,6 +146,7 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 
 - **Visites par ville** (admin seulement, page Profil) : compteur anonyme par jour, pays et ville (`public.visit_stats`, `supabase/visits.sql`). La ville vient des en-têtes géo de Vercel, lus par `api/hit.js`, appelé une fois par session de navigation. Aucune IP ni aucun identifiant n'est enregistré.
   - La fonction a besoin de la variable Vercel **`VISIT_SECRET`**, qui doit avoir la même valeur que `public.visit_secret` dans Supabase. Sans elle, rien n'est compté.
+  - ✅ `VISIT_SECRET` est configurée dans Vercel (Production et Preview), depuis le 25 septembre 2026.
 - **Modération** (admin seulement, page d'un joueur) :
   - voir les adresses IP récentes du joueur, lues dans `auth.sessions`, que Supabase conserve déjà ;
   - suspendre son compte 7 jours, 30 jours ou définitivement (`auth.users.banned_until`, déconnexion partout), puis le réactiver ;
