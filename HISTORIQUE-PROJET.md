@@ -142,6 +142,14 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Suppression de compte + partage WhatsApp/LINE (25 septembre 2026)
+
+- **Supprimer mon compte** (bas de la page Profil, caché pour l'admin) : le joueur doit taper un mot-clé
+  (SUPPRIMER / DELETE…) pour confirmer. La RPC `delete_my_account()` (`supabase/account.sql`) efface le compte
+  et, en cascade, son profil. Elle est refusée aux admins.
+- **Partage d'une séance** : boutons WhatsApp et LINE sur la page séance. Ils envoient un message traduit
+  (titre, date, lieu, lien) via la clé `detail.share.text`.
+
 ### ✅ Politique de confidentialité (25 septembre 2026)
 
 - Politique générée par le propriétaire avec **Termly**, copiée telle quelle dans `public/privacy-policy.html` et affichée sur **/confidentialite** (`src/pages/Privacy.tsx`). Le CSS de Termly est limité à la page.
@@ -412,7 +420,7 @@ RLS active partout. Lecture publique pour `venues`, `sessions`, `session_players
 
 ### Ensuite
 
-1. Notifications hors app (e-mail, LINE ou WhatsApp) à la confirmation ou l'annulation : aujourd'hui le joueur doit ouvrir l'app.
+1. Notifications hors app (e-mail, LINE ou WhatsApp ; le partage manuel WhatsApp/LINE existe déjà) à la confirmation ou l'annulation : aujourd'hui le joueur doit ouvrir l'app.
 2. Paiement à l'inscription (Stripe, ou Omise qui gère PromptPay) pour réduire les absences.
 3. ~~Signalement d'un joueur et modération~~ ✅ (Club). Prochaine étape sociale : fil d'actualité des moments de mes amis, « j'aime » et commentaires.
 4. ~~PWA~~ ✅ fait.
