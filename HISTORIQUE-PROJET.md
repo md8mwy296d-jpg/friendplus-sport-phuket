@@ -142,6 +142,13 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ Politique de confidentialité (25 septembre 2026)
+
+- Politique générée par le propriétaire avec **Termly**, copiée telle quelle dans `public/privacy-policy.html` et affichée sur **/confidentialite** (`src/pages/Privacy.tsx`). Le CSS de Termly est limité à la page.
+- Lien « Politique de confidentialité » dans le pied de page (fr/en/ru/th), ajouté au sitemap.
+- Contact données personnelles : contact01friendplussport@gmail.com.
+- **À corriger dans Termly puis recoller ici** : la section IA (le site n'a pas de fonction IA), les moyens de paiement listés en trop, l'application Facebook, le « mur d'offres », les pisteurs publicitaires tiers, le champ « Use ____ » vide et l'adresse postale vide.
+
 ### ✅ Journal des connexions : IP, ville, appareil (25 septembre 2026)
 
 - **Profil admin → « Dernières connexions »** : pour chaque visiteur (une ligne par session de navigation), on voit la date et l'heure, le pays et la ville, l'adresse IP et l'appareil, avec un bouton « Bloquer l'IP ».
