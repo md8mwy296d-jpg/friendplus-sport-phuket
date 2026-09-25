@@ -17,6 +17,7 @@ import FriendsPanel from '@/components/social/FriendsPanel';
 import UsernameField from '@/components/social/UsernameField';
 import VisitsByCity from '@/components/admin/VisitsByCity';
 import BlockedIps from '@/components/admin/BlockedIps';
+import DeleteAccount from '@/components/DeleteAccount';
 import VisitLog from '@/components/admin/VisitLog';
 import { SPORTS } from '@/lib/sports';
 
@@ -577,6 +578,8 @@ export default function Profile() {
             </div>
           </div>
         </motion.section>
+
+        <DeleteAccount />
       </div>
 
       {/* reset confirm dialog */}

@@ -221,6 +221,17 @@ export default function SessionDetail() {
     window.setTimeout(() => setCopied(false), 2000);
   };
 
+  // ready-made invite text for WhatsApp / LINE
+  const shareUrl = `${window.location.origin}/session/${session.id}`;
+  const shareText = t('detail.share.text', {
+    title: session.title,
+    when: formatDate(session.date, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+    place: venue ? venue.name : '',
+    url: shareUrl,
+  });
+  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  const lineHref = `https://line.me/R/share?text=${encodeURIComponent(shareText)}`;
+
   const handleLeave = () => {
     if (window.confirm(t('detail.action.leaveConfirm'))) leaveSession(session.id);
   };
@@ -724,6 +735,27 @@ export default function SessionDetail() {
                   <Mail className="h-4 w-4" />
                   {t('detail.action.invite')}
                 </button>
+              )}
+
+              {session.status !== 'cancelled' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <a
+                    href={whatsappHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#25D366] text-sm font-bold text-white transition-transform hover:scale-[1.02]"
+                  >
+                    WhatsApp
+                  </a>
+                  <a
+                    href={lineHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[#06C755] text-sm font-bold text-white transition-transform hover:scale-[1.02]"
+                  >
+                    LINE
+                  </a>
+                </div>
               )}
 
               <button
