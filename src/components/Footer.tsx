@@ -28,6 +28,7 @@ export default function Footer() {
         { to: '/#how-it-works', label: t('footer.howItWorks') },
         { to: '/salles', label: t('footer.partnerVenues') },
         { to: '/profil', label: t('footer.contact') },
+        { to: '/confidentialite', label: t('footer.privacy') },
       ],
     },
   ];

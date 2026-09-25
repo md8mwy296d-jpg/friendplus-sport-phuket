@@ -21,6 +21,7 @@ const Club = lazy(() => import('./pages/Club'))
 const Conversation = lazy(() => import('./pages/Conversation'))
 const PlayerProfile = lazy(() => import('./pages/PlayerProfile'))
 const PostPage = lazy(() => import('./pages/PostPage'))
+const Privacy = lazy(() => import('./pages/Privacy'))
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -58,6 +59,7 @@ export default function App() {
         <Route path="joueur/:id" element={<PlayerProfile />} />
         <Route path="publication/:id" element={<PostPage />} />
         <Route path="connexion" element={<Login />} />
+        <Route path="confidentialite" element={<Privacy />} />
         <Route path="bienvenue" element={<Onboarding />} />
         <Route path="*" element={<Home />} />
       </Route>
