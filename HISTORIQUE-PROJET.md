@@ -142,6 +142,26 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - La bannière d'installation ne s'affiche plus sur les pages session, connexion, Bienvenue, création, chat.
 - Pied de page : « Prototype démo — données simulées » remplacé.
 
+### ✅ E-mails automatiques des séances (25 septembre 2026)
+
+- Quand une séance passe à **confirmée** ou **annulée** (cron `evaluate_sessions` ou annulation par l'organisateur),
+  chaque joueur inscrit reçoit un e-mail, et aussi la liste d'attente en cas d'annulation. L'e-mail part de
+  `noreply@friendplussport.center`, en fr/en/ru/th (anglais pour les autres langues).
+- Déclencheur `sessions_notify_status` → `_notify_session_status()` (`supabase/notifications.sql`). Envoi via l'API Resend
+  avec `pg_net` (schéma `extensions`). Le journal `email_log` empêche tout doublon. Une erreur d'envoi ne bloque jamais
+  le changement de statut.
+- La clé Resend (« sending access », limitée au domaine) est rangée dans **Supabase Vault** sous le nom `resend_api_key`.
+  Elle ne figure jamais dans le code. Pour la changer : la révoquer dans Resend, puis `vault.update_secret`.
+- Testé : la mise en file d'attente a été vérifiée dans une transaction annulée, et un envoi réel vers `delivered@resend.dev` a reçu la réponse 200.
+
+### ✅ Prospection des salles par e-mail (25 septembre 2026)
+
+- 21 e-mails de partenariat envoyés depuis `contact@friendplussport.center` (réponses vers la boîte Gmail d'Azat),
+  à partir du kit de prospection. Suivi dans `FRIENDplus_Prospection_Salles_Phuket.xlsx`.
+- 4 adresses refusées (Sensei Padel, 15Love, Sinbi, Sutai) : taux de refus trop élevé, donc **plus d'envoi vers des
+  adresses non vérifiées**. Les autres lieux se contactent par WhatsApp, LINE ou en visite.
+- Relance J+5 prévue le 30/09, uniquement aux lieux qui n'ont pas répondu.
+
 ### ✅ Suppression de compte + partage WhatsApp/LINE (25 septembre 2026)
 
 - **Supprimer mon compte** (bas de la page Profil, caché pour l'admin) : le joueur doit taper un mot-clé
@@ -420,7 +440,7 @@ RLS active partout. Lecture publique pour `venues`, `sessions`, `session_players
 
 ### Ensuite
 
-1. Notifications hors app (e-mail, LINE ou WhatsApp ; le partage manuel WhatsApp/LINE existe déjà) à la confirmation ou l'annulation : aujourd'hui le joueur doit ouvrir l'app.
+1. ~~Notifications par e-mail à la confirmation ou l'annulation~~ : fait le 25/09. Restent LINE et WhatsApp automatiques à la confirmation ou l'annulation : aujourd'hui le joueur doit ouvrir l'app.
 2. Paiement à l'inscription (Stripe, ou Omise qui gère PromptPay) pour réduire les absences.
 3. ~~Signalement d'un joueur et modération~~ ✅ (Club). Prochaine étape sociale : fil d'actualité des moments de mes amis, « j'aime » et commentaires.
 4. ~~PWA~~ ✅ fait.
