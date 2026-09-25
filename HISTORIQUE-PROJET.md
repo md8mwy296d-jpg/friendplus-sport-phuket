@@ -147,7 +147,7 @@ Un ami arrivé par le lien d'une session a créé son compte sans jamais s'inscr
 - Politique générée par le propriétaire avec **Termly**, copiée telle quelle dans `public/privacy-policy.html` et affichée sur **/confidentialite** (`src/pages/Privacy.tsx`). Le CSS de Termly est limité à la page.
 - Lien « Politique de confidentialité » dans le pied de page (fr/en/ru/th), ajouté au sitemap.
 - Contact données personnelles : contact01friendplussport@gmail.com.
-- **À corriger dans Termly puis recoller ici** : la section IA (le site n'a pas de fonction IA), les moyens de paiement listés en trop, l'application Facebook, le « mur d'offres », les pisteurs publicitaires tiers, le champ « Use ____ » vide et l'adresse postale vide.
+- Version 2 (25 septembre) : section IA et application Facebook retirées. **Reste à corriger dans Termly** : PayPal et les moyens de paiement vides (garder Stripe), le « mur d'offres », les pisteurs publicitaires tiers (section 6), le champ « Use ____ » et l'adresse postale vides.
 
 ### ✅ Journal des connexions : IP, ville, appareil (25 septembre 2026)
 
