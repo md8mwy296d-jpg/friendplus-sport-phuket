@@ -272,11 +272,22 @@ begin
   if not found then raise exception 'not_allowed'; end if;
 end $$;
 
+-- Garde « serveur uniquement » : fonctions Edge (rôle service) ou tâches planifiées (postgres).
+-- En plus des droits d'exécution retirés plus bas : double sécurité.
+create or replace function public._require_server()
+returns void language plpgsql stable set search_path = public as $$
+begin
+  if coalesce(auth.role(), '') <> 'service_role' and current_user not in ('postgres', 'service_role', 'supabase_admin') then
+    raise exception 'not_allowed';
+  end if;
+end $$;
+
 -- Paiement reçu : appelée UNIQUEMENT par la fonction Edge stripe-webhook (rôle service)
 create or replace function public.mark_booking_paid(p_booking uuid, p_session text, p_intent text, p_amount_thb integer)
-returns text language plpgsql security definer set search_path = public as $$
+returns text language plpgsql security invoker set search_path = public as $$
 declare b public.bookings%rowtype;
 begin
+  perform public._require_server();
   select * into b from public.bookings where id = p_booking for update;
   if not found then return 'not_found'; end if;
   if b.status in ('paid','confirmed','completed') then return 'already'; end if;
@@ -294,16 +305,19 @@ end $$;
 
 -- Session de paiement créée : appelée par la fonction Edge create-checkout (rôle service)
 create or replace function public.attach_checkout_session(p_booking uuid, p_session text)
-returns void language sql security definer set search_path = public as $$
+returns void language plpgsql security invoker set search_path = public as $$
+begin
+  perform public._require_server();
   update public.bookings set stripe_session_id = p_session, updated_at = now()
    where id = p_booking and status = 'pending_payment';
-$$;
+end $$;
 
 -- Réservations non payées au bout de 2 h : expirées (appelé aussi par pg_cron)
 create or replace function public.expire_unpaid_bookings()
-returns integer language plpgsql security definer set search_path = public as $$
+returns integer language plpgsql security invoker set search_path = public as $$
 declare n integer;
 begin
+  perform public._require_server();
   update public.bookings set status = 'expired', updated_at = now()
    where status = 'pending_payment' and created_at < now() - interval '2 hours';
   get diagnostics n = row_count;
@@ -402,6 +416,9 @@ revoke execute on function public.expire_unpaid_bookings() from public, anon, au
 grant  execute on function public.mark_booking_paid(uuid, text, text, integer) to service_role;
 grant  execute on function public.attach_checkout_session(uuid, text) to service_role;
 grant  execute on function public.expire_unpaid_bookings() to service_role;
+revoke execute on function public._require_server() from public, anon, authenticated;
+grant  execute on function public._require_server() to service_role;
+grant all on public.bookings to service_role;
 
 -- ---------------------------------------------------------------------
 -- 5. Photos des offres : stockage public « offer-photos », écriture réservée à l'admin
@@ -505,6 +522,11 @@ declare
   m record;
   v_req bigint;
 begin
+  -- jamais appelable directement par un visiteur (anti-spam) : uniquement depuis le serveur / les déclencheurs
+  if coalesce(auth.role(), '') <> 'service_role' and session_user not in ('postgres', 'supabase_admin')
+     and current_setting('mpk.in_trigger', true) is distinct from 'on' then
+    raise exception 'not_allowed';
+  end if;
   if p_to is null or exists (select 1 from public.booking_emails where booking_id = b.id and kind = p_kind) then
     return;
   end if;
@@ -531,6 +553,7 @@ declare
   a record;
 begin
   if new.status = old.status then return new; end if;
+  perform set_config('mpk.in_trigger', 'on', true);
   select u.email, p.lang into v_email, v_lang
     from auth.users u left join public.profiles p on p.id = u.id where u.id = new.user_id;
   if new.status = 'paid' then
@@ -544,6 +567,7 @@ begin
   elsif new.status = 'cancelled' and old.status <> 'pending_payment' then
     perform public._send_booking_email(new, 'cancelled', v_email, v_lang);
   end if;
+  perform set_config('mpk.in_trigger', 'off', true);
   return new;
 exception when others then
   -- un souci d'e-mail ne doit jamais bloquer un paiement
