@@ -22,8 +22,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#FBF6EC',
-        theme_color: '#FBF6EC',
+        background_color: '#F7F4EE',
+        theme_color: '#F7F4EE',
         categories: ['travel', 'lifestyle', 'shopping'],
         icons: [
           { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },

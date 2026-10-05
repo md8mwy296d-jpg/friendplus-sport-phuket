@@ -201,7 +201,7 @@ export default function OfferEditor({ offer, onDone }: { offer: Offer | null; on
                   onChange={(e) => set('arrival_covers', e.target.checked
                     ? [...d.arrival_covers, need]
                     : d.arrival_covers.filter((x) => x !== need))}
-                  className="h-4 w-4 accent-[#0E8C7F]"
+                  className="h-4 w-4 accent-[#A8844A]"
                 />
                 {t(`arrival.need.${need}`)}
               </label>
@@ -265,11 +265,11 @@ export default function OfferEditor({ offer, onDone }: { offer: Offer | null; on
         </div>
         <div className="flex flex-wrap gap-5">
           <label className="inline-flex items-center gap-2 text-sm font-medium text-ink">
-            <input type="checkbox" checked={d.active} onChange={(e) => set('active', e.target.checked)} className="h-4 w-4 accent-[#0E8C7F]" />
+            <input type="checkbox" checked={d.active} onChange={(e) => set('active', e.target.checked)} className="h-4 w-4 accent-[#A8844A]" />
             {t('admin.offer.active')}
           </label>
           <label className="inline-flex items-center gap-2 text-sm font-medium text-ink">
-            <input type="checkbox" checked={d.featured} onChange={(e) => set('featured', e.target.checked)} className="h-4 w-4 accent-[#0E8C7F]" />
+            <input type="checkbox" checked={d.featured} onChange={(e) => set('featured', e.target.checked)} className="h-4 w-4 accent-[#A8844A]" />
             {t('admin.offer.featured')}
           </label>
         </div>

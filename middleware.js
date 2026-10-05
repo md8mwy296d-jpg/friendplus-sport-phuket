@@ -19,7 +19,7 @@ const cache = new Map(); // ip -> { blocked, at }
 
 const BLOCKED_PAGE = `<!doctype html><html lang="fr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>My Phuket Key</title></head>
-<body style="font-family:system-ui,sans-serif;background:#FBF6EC;color:#0B2E2B;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px;text-align:center">
+<body style="font-family:system-ui,sans-serif;background:#F7F4EE;color:#15130F;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px;text-align:center">
 <div><h1>Accès bloqué · Access blocked</h1>
 <p>Cet accès a été bloqué pour non-respect des règles de My Phuket Key.</p>
 <p>This access has been blocked for breaking the My Phuket Key rules.</p></div></body></html>`;

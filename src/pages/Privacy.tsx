@@ -18,11 +18,11 @@ export default function Privacy() {
   return (
     <div className="mx-auto max-w-3xl px-4 pb-16 pt-28 sm:px-6">
       {html === null ? (
-        <p className="py-20 text-center text-sm text-[#0B2E2B]/45">{t('common.loading')}</p>
+        <p className="py-20 text-center text-sm text-[#15130F]/45">{t('common.loading')}</p>
       ) : html === '' ? (
-        <p className="py-20 text-center text-sm text-[#0B2E2B]/60">contact01friendplussport@gmail.com</p>
+        <p className="py-20 text-center text-sm text-[#15130F]/60">contact01friendplussport@gmail.com</p>
       ) : (
-        <div className="overflow-x-auto rounded-[24px] border border-[#EADFC8] bg-white p-6 sm:p-10" dangerouslySetInnerHTML={{ __html: html }} />
+        <div className="overflow-x-auto rounded-[24px] border border-[#E4DCCF] bg-white p-6 sm:p-10" dangerouslySetInnerHTML={{ __html: html }} />
       )}
     </div>
   );

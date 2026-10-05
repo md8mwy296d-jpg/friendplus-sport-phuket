@@ -1,11 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
-  <!-- My Phuket Key: a key whose bow is the island sun over the sea -->
-  <rect width="256" height="256" rx="64" fill="#0B2E2B"/>
-  <circle cx="98" cy="104" r="54" fill="#FFB547"/>
-  <path d="M44 112c18 10 36 10 54 0s36-10 54 0" fill="none" stroke="#0B2E2B" stroke-width="10" stroke-linecap="round"/>
-  <path d="M50 132c16 8 32 8 48 0s32-8 48 0" fill="none" stroke="#0B2E2B" stroke-width="8" stroke-linecap="round" opacity=".55"/>
-  <circle cx="98" cy="104" r="54" fill="none" stroke="#FFF" stroke-width="12"/>
-  <path d="M146 136l64 64" stroke="#FFF" stroke-width="18" stroke-linecap="round"/>
-  <path d="M178 168l18-18M196 186l14-14" stroke="#FFF" stroke-width="16" stroke-linecap="round"/>
-  <circle cx="98" cy="104" r="14" fill="#FF6B4A"/>
+  <!-- My Phuket Key: a fine gold key on onyx, private-club style -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E6D3A3"/>
+      <stop offset="1" stop-color="#A8844A"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="#15130F"/>
+  <rect x="14" y="14" width="228" height="228" rx="44" fill="none" stroke="#A8844A" stroke-width="2" opacity=".55"/>
+  <circle cx="102" cy="102" r="42" fill="none" stroke="url(#g)" stroke-width="11"/>
+  <circle cx="102" cy="102" r="13" fill="none" stroke="url(#g)" stroke-width="6"/>
+  <path d="M132 132l70 70" stroke="url(#g)" stroke-width="12" stroke-linecap="round"/>
+  <path d="M170 170l17-17M188 188l13-13" stroke="url(#g)" stroke-width="10" stroke-linecap="round"/>
 </svg>

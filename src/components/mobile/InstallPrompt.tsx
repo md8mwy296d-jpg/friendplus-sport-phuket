@@ -81,34 +81,34 @@ export default function InstallPrompt() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 40, opacity: 0 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-x-3 bottom-[calc(76px+env(safe-area-inset-bottom))] z-40 mx-auto max-w-md rounded-[20px] border border-[#EADFC8] bg-white p-4 shadow-[0_16px_40px_rgba(11,46,43,.18)] lg:hidden"
+          className="fixed inset-x-3 bottom-[calc(76px+env(safe-area-inset-bottom))] z-40 mx-auto max-w-md rounded-[20px] border border-[#E4DCCF] bg-white p-4 shadow-[0_16px_40px_rgba(11,46,43,.18)] lg:hidden"
           role="dialog"
           aria-label={t('pwa.install.title')}
         >
           <div className="flex items-start gap-3">
             <img src="/pwa-192.png" alt="" className="h-12 w-12 shrink-0 rounded-xl" />
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-bold text-[#0B2E2B]">{t('pwa.install.title')}</p>
-              <p className="mt-0.5 text-[13px] leading-snug text-[#0B2E2B]/60">
+              <p className="text-[15px] font-bold text-[#15130F]">{t('pwa.install.title')}</p>
+              <p className="mt-0.5 text-[13px] leading-snug text-[#15130F]/60">
                 {deferred ? t('pwa.install.body') : (
                   <>
                     {t('pwa.install.ios', { share: '§' }).split('§')[0]}
-                    <Share className="mx-0.5 inline h-4 w-4 -translate-y-0.5 text-[#0E8C7F]" aria-label="Share" />
+                    <Share className="mx-0.5 inline h-4 w-4 -translate-y-0.5 text-[#A8844A]" aria-label="Share" />
                     {t('pwa.install.ios', { share: '§' }).split('§')[1]}
                   </>
                 )}
               </p>
             </div>
-            <button onClick={dismiss} className="-mr-1 -mt-1 rounded-full p-1.5 text-[#0B2E2B]/40 hover:bg-[#FBF6EC]" aria-label={t('pwa.install.later')}>
+            <button onClick={dismiss} className="-mr-1 -mt-1 rounded-full p-1.5 text-[#15130F]/40 hover:bg-[#F7F4EE]" aria-label={t('pwa.install.later')}>
               <X className="h-4 w-4" />
             </button>
           </div>
           {deferred && (
             <div className="mt-3 flex gap-2">
-              <button onClick={dismiss} className="h-10 flex-1 rounded-full border border-[#EADFC8] text-sm font-semibold text-[#0B2E2B]/70">
+              <button onClick={dismiss} className="h-10 flex-1 rounded-full border border-[#E4DCCF] text-sm font-semibold text-[#15130F]/70">
                 {t('pwa.install.later')}
               </button>
-              <button onClick={() => void install()} className="h-10 flex-1 rounded-full bg-[#0E8C7F] text-sm font-bold text-white">
+              <button onClick={() => void install()} className="h-10 flex-1 rounded-full bg-[#A8844A] text-sm font-bold text-white">
                 {t('pwa.install.cta')}
               </button>
             </div>

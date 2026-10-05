@@ -35,7 +35,7 @@ export default function Home() {
         <div className="palm-texture absolute inset-0 bg-white/[0.05]" aria-hidden />
         <div
           className="absolute -right-24 -top-24 h-[420px] w-[420px] rounded-full opacity-40 blur-3xl"
-          style={{ background: 'radial-gradient(circle, #FFB547, transparent 65%)' }}
+          style={{ background: 'radial-gradient(circle, #D9C08A, transparent 65%)' }}
           aria-hidden
         />
         <div className="relative mx-auto max-w-[1200px] px-4 pb-20 pt-14 sm:px-6 md:pb-28 md:pt-24">

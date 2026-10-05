@@ -9,12 +9,12 @@ import { cn } from '@/lib/utils';
 const KIND_STYLE: Record<ToastItem['kind'], { icon: typeof Info; classes: string }> = {
   info: { icon: Info, classes: 'border-[#5B7CFF]/40 text-[#5B7CFF]' },
   success: { icon: CheckCircle2, classes: 'border-[#22C55E]/40 text-[#22C55E]' },
-  warning: { icon: AlertTriangle, classes: 'border-[#FFB547]/50 text-[#B97A0B]' },
+  warning: { icon: AlertTriangle, classes: 'border-[#D9C08A]/50 text-[#B97A0B]' },
   error: { icon: XCircle, classes: 'border-[#F05252]/40 text-[#F05252]' },
-  celebration: { icon: PartyPopper, classes: 'border-[#0E8C7F]/40 text-[#0E8C7F]' },
+  celebration: { icon: PartyPopper, classes: 'border-[#A8844A]/40 text-[#A8844A]' },
 };
 
-const TROPICAL_COLORS = ['#FF6B4A', '#FFB547', '#0E8C7F', '#2FBFA5', '#22C55E'];
+const TROPICAL_COLORS = ['#B08D57', '#D9C08A', '#A8844A', '#D4BC8A', '#22C55E'];
 
 function fireConfetti() {
   confetti({
@@ -56,12 +56,12 @@ function ToastCard({ toast }: { toast: ToastItem }) {
     >
       <Icon className="mt-0.5 h-5 w-5 shrink-0" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-[#0B2E2B]">{toast.title}</p>
-        {toast.body && <p className="mt-0.5 text-[13px] leading-snug text-[#0B2E2B]/60">{toast.body}</p>}
+        <p className="text-sm font-semibold text-[#15130F]">{toast.title}</p>
+        {toast.body && <p className="mt-0.5 text-[13px] leading-snug text-[#15130F]/60">{toast.body}</p>}
       </div>
       <button
         onClick={() => dismissToast(toast.id)}
-        className="rounded-full p-1 text-[#0B2E2B]/40 transition-colors hover:bg-[#FBF6EC] hover:text-[#0B2E2B]"
+        className="rounded-full p-1 text-[#15130F]/40 transition-colors hover:bg-[#F7F4EE] hover:text-[#15130F]"
         aria-label="Dismiss"
       >
         <X className="h-4 w-4" />

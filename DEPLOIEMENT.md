@@ -15,7 +15,10 @@ hélicoptère. **Une réservation n'est valide qu'une fois la carte débitée** 
 
 ## 1. Base de données (Supabase → SQL Editor)
 
-Dans cet ordre, une requête à la fois :
+**Projet actuel (passage depuis FRIEND+ Sport)** : une seule requête suffit, `supabase/mise-en-ligne.sql`
+(profils privés, programme d'arrivée, sécurité des paiements, suppression de l'ancienne version sport).
+
+**Nouveau projet** : dans cet ordre, une requête à la fois :
 
 1. **`supabase/myphuketkey.sql`** : offres, réservations, paiement, e-mails, photos, 9 offres d'exemple.
    Ré-exécutable sans risque.

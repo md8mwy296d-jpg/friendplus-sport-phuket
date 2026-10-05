@@ -11,7 +11,7 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
   const next = encodeURIComponent(pathname + search);
 
   if (!ready || (isAuthenticated && !profileLoaded)) {
-    return <p className="py-24 text-center text-sm text-[#0B2E2B]/50">{t('common.loading')}</p>;
+    return <p className="py-24 text-center text-sm text-[#15130F]/50">{t('common.loading')}</p>;
   }
   if (!isAuthenticated) return <Navigate to={`/connexion?next=${next}`} replace />;
   if (!profileComplete) return <Navigate to={`/bienvenue?next=${next}`} replace />;

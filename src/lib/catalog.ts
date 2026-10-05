@@ -14,16 +14,16 @@ export interface Category {
 
 /** The services, in display order (arrival concierge first). Labels come from i18n: `cat.<id>` and `cat.<id>.tagline`. */
 export const CATEGORIES: Category[] = [
-  { id: 'arrival', icon: PlaneLanding, from: '#0E8C7F', to: '#FFB547' },
-  { id: 'scooter', icon: Motorbike, from: '#FF6B4A', to: '#FFB547' },
-  { id: 'excursion', icon: TreePalm, from: '#0E8C7F', to: '#2FBFA5' },
-  { id: 'boat', icon: Sailboat, from: '#1F6FB2', to: '#2FBFA5' },
-  { id: 'stay', icon: BedDouble, from: '#1E5945', to: '#0E8C7F' },
-  { id: 'nightlife', icon: Martini, from: '#5B3CC4', to: '#C04CD8' },
-  { id: 'nanny', icon: Baby, from: '#F38BA0', to: '#FFB547' },
-  { id: 'cleaning', icon: WashingMachine, from: '#2FA6D8', to: '#7AD3C9' },
-  { id: 'beauty', icon: Sparkles, from: '#D94C8A', to: '#FF8C7A' },
-  { id: 'helicopter', icon: Helicopter, from: '#0B2E2B', to: '#3E6E8E' },
+  { id: 'arrival', icon: PlaneLanding, from: '#15130F', to: '#A8844A' },
+  { id: 'scooter', icon: Motorbike, from: '#2A251E', to: '#8C6D3B' },
+  { id: 'excursion', icon: TreePalm, from: '#1E2622', to: '#6E7F6A' },
+  { id: 'boat', icon: Sailboat, from: '#141D26', to: '#5B7083' },
+  { id: 'stay', icon: BedDouble, from: '#2A251E', to: '#B08D57' },
+  { id: 'nightlife', icon: Martini, from: '#1A1418', to: '#6E4B5E' },
+  { id: 'nanny', icon: Baby, from: '#2E2622', to: '#A68C78' },
+  { id: 'cleaning', icon: WashingMachine, from: '#1F2326', to: '#7D878D' },
+  { id: 'beauty', icon: Sparkles, from: '#2B1F1D', to: '#9C7066' },
+  { id: 'helicopter', icon: Helicopter, from: '#0F0E0C', to: '#4A4238' },
 ];
 
 export const CATEGORY_IDS = CATEGORIES.map((c) => c.id);
