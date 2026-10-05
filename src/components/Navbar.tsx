@@ -73,11 +73,11 @@ export default function Navbar() {
             <Link
               to={`/connexion?next=${encodeURIComponent(pathname)}`}
               className={cn(
-                'flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-bold',
+                'flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-bold sm:px-4',
                 dark ? 'bg-white text-ink' : 'bg-ink text-white',
               )}
             >
-              <UserRound className="h-4 w-4" /> {t('nav.login')}
+              <UserRound className="hidden h-4 w-4 min-[400px]:block" /> {t('nav.login')}
             </Link>
           )}
         </div>
