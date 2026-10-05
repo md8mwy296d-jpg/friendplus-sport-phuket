@@ -1,81 +1,103 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import type { Session as AuthSession } from '@supabase/supabase-js';
-import type { Invitation, Session, Sport, StoreState, ToastItem, User, Venue, Level, Lang } from './types';
+import type {
+  ArrivalNeed, Booking, BookingStatus, CategoryId, DeliveryMode, Lang, Offer, OfferOption, Profile, ToastItem, Trip,
+} from './types';
 import { useI18n } from './i18n';
 import { supabase, SUPABASE_CONFIGURED } from './supabase';
-import { DEFAULT_RATES, FIXED_QUOTA, pricePerPlayer, type Rates, type SportRate } from './sports';
-
-/** Kept for backward compatibility with older imports (no longer used for data). */
-export const STORAGE_KEY = 'friendplus.v1';
-
-export interface CreateSessionInput {
-  sport: Sport;
-  title: string;
-  venueId: string;
-  date: string; // ISO
-  durationMin: number;
-  quota: number;
-  level: Level | 'all';
-  mixed: boolean;
-  description: string;
-  confirmHoursBefore?: 24 | 48;
-}
 
 export interface ProfilePatch {
   name?: string;
   nationality?: string;
   countryCode?: string;
   lang?: Lang;
-  sports?: Sport[];
-  level?: Level;
-  bio?: string;
+  phone?: string;
   onboarded?: boolean;
-  avatarColor?: number | null;
+}
+
+export interface BookingInput {
+  offerId: string;
+  startDate: string;
+  endDate: string | null;
+  startTime: string;
+  qty: number;
+  optionIds: string[];
+  contactName: string;
+  contactPhone: string;
+  pickup: string;
+  notes: string;
+  delivery: DeliveryMode;
+  deliveryAddress: string;
+  flightNumber: string;
+}
+
+/** Offer as edited in the admin form (snake_case, sent as-is to admin_save_offer). */
+export interface OfferDraft {
+  id?: string;
+  slug: string;
+  category: CategoryId;
+  title: string;
+  summary: string;
+  description: string;
+  highlights: string[];
+  included: string[];
+  not_included: string[];
+  area: string;
+  meeting_point: string;
+  duration_label: string;
+  price_thb: number;
+  price_unit: Offer['priceUnit'];
+  min_qty: number;
+  max_qty: number;
+  options: OfferOption[];
+  photos: string[];
+  rating: number;
+  review_count: number;
+  cancellation: string;
+  featured: boolean;
+  active: boolean;
+  sort: number;
+  delivery_airport_thb: number | null;
+  delivery_address_thb: number | null;
+  arrival_covers: ArrivalNeed[];
 }
 
 export interface StoreContextValue {
-  // state
-  state: StoreState;
   toasts: ToastItem[];
-  currentUser: User;
-  users: User[];
-  venues: Venue[];
-  /** Fixed prices per sport (public.sport_rates). */
-  rates: Rates;
-  sessions: Session[];
-  invitations: Invitation[];
+  configured: boolean;
   // auth
   ready: boolean; // first load finished
   isAuthenticated: boolean;
-  profileLoaded: boolean; // profile of the signed-in user fetched at least once
+  profileLoaded: boolean;
   profileComplete: boolean;
+  isAdmin: boolean;
   email: string;
-  configured: boolean;
-  // getters
-  getUser: (id: string) => User | undefined;
-  getVenue: (id: string) => Venue | undefined;
-  getSession: (id: string) => Session | undefined;
-  pendingInvitesForMe: Invitation[];
+  profile: Profile | null;
+  // data
+  offers: Offer[];
+  offersReady: boolean;
+  bookings: Booking[];
+  /** The customer's arrival (null = not filled in yet). */
+  trip: Trip | null;
+  getOffer: (slug: string) => Offer | undefined;
   // actions
-  joinSession: (sessionId: string) => void;
-  leaveSession: (sessionId: string) => void;
-  cancelSession: (sessionId: string) => Promise<boolean>;
-  createSession: (input: CreateSessionInput) => Session;
-  sendInvitation: (sessionId: string, toUserId: string, message?: string) => void;
-  respondInvitation: (invitationId: string, accept: boolean) => void;
   updateProfile: (patch: ProfilePatch) => Promise<boolean>;
-  /** Changes the player's @handle (unique; errors are shown as toasts). */
-  setUsername: (username: string) => Promise<boolean>;
-  /** Resizes the picture, stores it and makes it the profile photo. */
-  uploadAvatar: (file: File) => Promise<boolean>;
-  removeAvatar: () => Promise<boolean>;
+  createBooking: (input: BookingInput) => Promise<string | null>;
+  payBooking: (bookingId: string) => Promise<boolean>;
+  cancelUnpaidBooking: (bookingId: string) => Promise<boolean>;
+  refreshBookings: () => Promise<void>;
+  refreshOffers: () => Promise<void>;
+  saveTrip: (trip: Trip) => Promise<boolean>;
   signOut: () => Promise<void>;
-  /** Legacy name used by the UI: now signs the user out. */
-  resetDemo: () => void;
-  dismissToast: (id: string) => void;
   pushToast: (toast: Omit<ToastItem, 'id'>) => void;
-  refresh: () => Promise<void>;
+  pushError: (err: unknown) => void;
+  dismissToast: (id: string) => void;
+  // admin
+  adminBookings: () => Promise<Booking[]>;
+  adminSetBookingStatus: (id: string, status: BookingStatus, note?: string) => Promise<boolean>;
+  adminSaveOffer: (draft: OfferDraft) => Promise<string | null>;
+  adminUploadPhoto: (file: File) => Promise<string | null>;
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -89,140 +111,107 @@ export function useStore(): StoreContextValue {
 let idCounter = 0;
 const uid = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${(idCounter++).toString(36)}`;
 
-const AVATAR_BUCKET = 'avatars';
-const AVATAR_SIZE = 320;
-
-/** Square-crops and downsizes a picture so phone photos upload fast and stay small. */
-async function resizeAvatar(file: File): Promise<Blob> {
-  const bitmap = await createImageBitmap(file);
-  const side = Math.min(bitmap.width, bitmap.height);
-  const canvas = document.createElement('canvas');
-  canvas.width = AVATAR_SIZE;
-  canvas.height = AVATAR_SIZE;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('canvas_unavailable');
-  ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
-  bitmap.close();
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('encode_failed'))), 'image/jpeg', 0.86);
-  });
-}
-
 /* ------------------------------ row mappers ------------------------------ */
 
 type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-function toUser(r: Row): User {
+export function toOffer(r: Row): Offer {
+  return {
+    id: r.id,
+    slug: r.slug,
+    category: r.category,
+    title: r.title,
+    summary: r.summary || '',
+    description: r.description || '',
+    highlights: r.highlights || [],
+    included: r.included || [],
+    notIncluded: r.not_included || [],
+    area: r.area || '',
+    meetingPoint: r.meeting_point || '',
+    durationLabel: r.duration_label || '',
+    priceThb: r.price_thb,
+    priceUnit: r.price_unit,
+    minQty: r.min_qty ?? 1,
+    maxQty: r.max_qty ?? 10,
+    options: Array.isArray(r.options) ? r.options : [],
+    photos: r.photos || [],
+    rating: Number(r.rating ?? 5),
+    reviewCount: r.review_count ?? 0,
+    cancellation: r.cancellation || '',
+    featured: Boolean(r.featured),
+    active: r.active !== false,
+    sort: r.sort ?? 0,
+    deliveryAirportThb: r.delivery_airport_thb ?? null,
+    deliveryAddressThb: r.delivery_address_thb ?? null,
+    arrivalCovers: r.arrival_covers || [],
+  };
+}
+
+function toBooking(r: Row): Booking {
+  return {
+    id: r.id,
+    ref: r.ref,
+    offerId: r.offer_id ?? null,
+    offerTitle: r.offer_title,
+    category: r.category,
+    startDate: r.start_date,
+    endDate: r.end_date ?? null,
+    startTime: r.start_time || '',
+    qty: r.qty,
+    units: r.units ?? 1,
+    options: Array.isArray(r.options) ? r.options : [],
+    amountThb: r.amount_thb,
+    status: r.status,
+    contactName: r.contact_name || '',
+    contactPhone: r.contact_phone || '',
+    pickup: r.pickup || '',
+    notes: r.notes || '',
+    adminNote: r.admin_note || '',
+    paidAt: r.paid_at ?? null,
+    createdAt: r.created_at,
+    delivery: (['airport', 'address'].includes(r.delivery) ? r.delivery : 'none') as DeliveryMode,
+    deliveryFeeThb: r.delivery_fee_thb ?? 0,
+    deliveryAddress: r.delivery_address || '',
+    flightNumber: r.flight_number || '',
+    email: r.email ?? undefined,
+    trip: r.trip ? toTrip(r.trip as Row) : r.trip === null ? null : undefined,
+  };
+}
+
+export function toTrip(r: Row): Trip {
+  return {
+    arrivalDate: r.arrival_date || '',
+    arrivalTime: r.arrival_time || '',
+    flightNumber: r.flight_number || '',
+    departureDate: r.departure_date || '',
+    stayType: r.stay_type || 'hotel',
+    stayName: r.stay_name || '',
+    stayAddress: r.stay_address || '',
+    travelers: r.travelers ?? 2,
+    bags: r.bags ?? 2,
+    notes: r.notes || '',
+  };
+}
+
+function toProfile(r: Row): Profile {
   return {
     id: r.id,
     name: r.name || '',
     nationality: r.nationality || '🌍',
     countryCode: r.country_code || '',
-    lang: (r.lang || 'fr') as Lang,
-    sports: (r.sports || []) as Sport[],
-    level: (r.level || 'beginner') as Level,
-    rating: Number(r.rating ?? 5),
-    bio: r.bio || '',
-    joinedCount: r.joined_count ?? 0,
-    organizedCount: r.organized_count ?? 0,
-    avatarUrl: r.avatar_path ? supabase.storage.from(AVATAR_BUCKET).getPublicUrl(r.avatar_path).data.publicUrl : '',
-    avatarColor: r.avatar_color ?? null,
-    certified: Boolean(r.certified),
-    fairplayPct: r.fairplay_pct ?? null,
-    activityPct: r.activity_pct ?? 0,
-    score: r.score ?? null,
-    reviewCount: r.review_count ?? 0,
-    profilePct: r.profile_pct ?? 0,
-    isAdmin: Boolean(r.is_admin),
-    isOwner: Boolean(r.is_owner),
-    username: r.username ?? '',
+    lang: (r.lang || 'en') as Lang,
+    phone: r.phone || '',
+    onboarded: Boolean(r.onboarded),
   };
 }
-
-function toVenue(r: Row): Venue {
-  return {
-    id: r.id,
-    name: r.name,
-    area: r.area,
-    sports: (r.sports || []) as Sport[],
-    address: r.address || '',
-    rating: Number(r.rating ?? 0),
-    priceFrom: r.price_from ?? 0,
-    photo: r.photo || '',
-    amenities: r.amenities || [],
-    hours: r.hours || '',
-  };
-}
-
-function toSession(r: Row): Session {
-  const members: { user_id: string; kind: string; joined_at: string }[] = [...(r.session_players || [])]
-    .sort((a, b) => String(a.joined_at).localeCompare(String(b.joined_at)));
-  return {
-    id: r.id,
-    sport: r.sport,
-    title: r.title,
-    venueId: r.venue_id,
-    date: r.starts_at,
-    durationMin: r.duration_min,
-    quota: r.quota,
-    playerIds: members.filter((m) => m.kind === 'player').map((m) => m.user_id),
-    waitlistIds: members.filter((m) => m.kind === 'waitlist').map((m) => m.user_id),
-    pricePerPerson: r.price_per_person,
-    level: r.level,
-    mixed: r.mixed,
-    status: r.status,
-    confirmationDeadline: r.confirmation_deadline,
-    creatorId: r.creator_id,
-    description: r.description || '',
-    createdAt: r.created_at,
-  };
-}
-
-function toInvitation(r: Row): Invitation {
-  return {
-    id: r.id,
-    sessionId: r.session_id,
-    fromUserId: r.from_user_id,
-    toUserId: r.to_user_id,
-    status: r.status,
-    message: r.message || '',
-    createdAt: r.created_at,
-  };
-}
-
-const GUEST: User = {
-  id: '',
-  name: '',
-  nationality: '🌍',
-  countryCode: '',
-  lang: 'fr',
-  sports: [],
-  level: 'beginner',
-  rating: 5,
-  bio: '',
-  joinedCount: 0,
-  organizedCount: 0,
-  avatarUrl: '',
-  avatarColor: null,
-  certified: false,
-  fairplayPct: null,
-  activityPct: 0,
-  score: null,
-  reviewCount: 0,
-  profilePct: 0,
-  isAdmin: false,
-  isOwner: false,
-  username: '',
-};
 
 const KNOWN_ERRORS = [
-  'not_authenticated', 'profile_incomplete', 'session_closed', 'not_found', 'too_soon', 'too_far',
-  'too_many_sessions', 'venue_sport_mismatch', 'not_allowed', 'rate_limited', 'invalid_input',
-  'username_taken', 'username_invalid',
+  'not_authenticated', 'not_found', 'not_allowed', 'rate_limited', 'invalid_input', 'invalid_date',
+  'invalid_quantity', 'invalid_contact', 'invalid_delivery', 'not_payable', 'payments_not_configured',
 ];
 
-function errorKey(err: unknown): string {
-  const msg = (err as { message?: string } | null)?.message ?? '';
+export function errorKey(err: unknown): string {
+  const msg = (err as { message?: string } | null)?.message ?? String(err ?? '');
   const code = KNOWN_ERRORS.find((k) => msg.includes(k));
   return code ? `err.${code}` : 'err.generic';
 }
@@ -232,23 +221,18 @@ function errorKey(err: unknown): string {
 export function StoreProvider({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [auth, setAuth] = useState<AuthSession | null>(null);
   const [authReady, setAuthReady] = useState(false);
-  const [dataReady, setDataReady] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
-  const [venues, setVenues] = useState<Venue[]>([]);
-  const [rates, setRates] = useState<Rates>(DEFAULT_RATES);
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [me, setMe] = useState<{ onboarded: boolean; createdAt: string } | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [offersReady, setOffersReady] = useState(false);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [trip, setTrip] = useState<Trip | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-
   const myId = auth?.user.id ?? '';
-  const prevStatuses = useRef<Map<string, Session['status']>>(new Map());
-  const pendingCreates = useRef<Map<string, Promise<boolean>>>(new Map());
-  const reloadTimer = useRef<number | undefined>(undefined);
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
@@ -276,239 +260,66 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /* ------------------------------- data ------------------------------- */
-  const load = useCallback(async () => {
-    if (!SUPABASE_CONFIGURED) { setDataReady(true); return; }
-    const since = new Date(Date.now() - 45 * 24 * 3600_000).toISOString();
-    const [vRes, sRes, uRes, iRes] = await Promise.all([
-      supabase.from('venues').select('*').order('name'),
-      supabase
-        .from('sessions')
-        .select('*, session_players(user_id, kind, joined_at)')
-        .gte('starts_at', since)
-        .order('starts_at', { ascending: true })
-        .limit(500),
-      supabase.from('public_profiles').select('*').limit(2000),
-      myId
-        ? supabase.from('invitations').select('*').order('created_at', { ascending: false }).limit(300)
-        : Promise.resolve({ data: [] as Row[], error: null }),
+  const refreshOffers = useCallback(async () => {
+    if (!SUPABASE_CONFIGURED) { setOffersReady(true); return; }
+    const { data, error } = await supabase.from('offers').select('*').order('sort').order('created_at');
+    if (error) console.error(error);
+    setOffers(((data ?? []) as Row[]).map(toOffer));
+    setOffersReady(true);
+  }, []);
+
+  const refreshBookings = useCallback(async () => {
+    if (!SUPABASE_CONFIGURED || !myId) { setBookings([]); return; }
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('user_id', myId)
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (error) { console.error(error); return; }
+    setBookings(((data ?? []) as Row[]).map(toBooking));
+  }, [myId]);
+
+  const loadMe = useCallback(async () => {
+    if (!SUPABASE_CONFIGURED || !myId) {
+      setProfile(null);
+      setIsAdmin(false);
+      setTrip(null);
+      setProfileLoaded(true);
+      return;
+    }
+    const [pRes, aRes, tRes] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', myId).maybeSingle(),
+      supabase.from('app_admins').select('user_id').eq('user_id', myId),
+      supabase.from('trips').select('*').eq('user_id', myId).maybeSingle(),
     ]);
-    const firstError = vRes.error || sRes.error || uRes.error || iRes.error;
-    if (firstError) { console.error(firstError); setDataReady(true); return; }
+    if (pRes.error) console.error(pRes.error);
+    if (tRes.error) console.error(tRes.error);
+    setProfile(pRes.data ? toProfile(pRes.data as Row) : null);
+    setIsAdmin(((aRes.data ?? []) as Row[]).length > 0);
+    setTrip(tRes.data ? toTrip(tRes.data as Row) : null);
+    setProfileLoaded(true);
+  }, [myId]);
 
-    const nextSessions = ((sRes.data ?? []) as Row[]).map(toSession);
+  // offers are public: load them right away (and again after sign-in, for admins who see inactive ones)
+  useEffect(() => { if (authReady) void refreshOffers(); }, [authReady, myId, refreshOffers]);
 
-    // status transitions on sessions I'm in → celebratory / warning toasts
-    if (myId && prevStatuses.current.size > 0) {
-      for (const s of nextSessions) {
-        const before = prevStatuses.current.get(s.id);
-        if (!before || before === s.status || !s.playerIds.includes(myId)) continue;
-        if (s.status === 'confirmed') {
-          pushToast({ kind: 'celebration', title: t('toast.confirmed'), body: t('toast.confirmedBody', { title: s.title }) });
-        } else if (s.status === 'cancelled') {
-          pushToast({ kind: 'error', title: t('toast.cancelled'), body: t('toast.cancelledBody', { title: s.title }) });
-        }
-      }
-    }
-    prevStatuses.current = new Map(nextSessions.map((s) => [s.id, s.status]));
-
-    const profileRows = (uRes.data ?? []) as Row[];
-    // only players who finished onboarding are listed (plus myself)
-    setUsers(profileRows.filter((r) => r.onboarded || r.id === myId).map(toUser));
-    setVenues(((vRes.data ?? []) as Row[]).map(toVenue));
-    // prices are fixed by FRIEND+; a missing table simply keeps the built-in defaults
-    const { data: rateRows } = await supabase.from('sport_rates').select('sport, amount, per');
-    if (rateRows?.length) {
-      const next: Rates = { ...DEFAULT_RATES };
-      for (const r of rateRows as Row[]) next[r.sport as Sport] = { amount: r.amount, per: r.per } as SportRate;
-      setRates(next);
-    }
-    setSessions(nextSessions);
-    setInvitations(((iRes.data ?? []) as Row[]).map(toInvitation));
-
-    if (myId) {
-      const row = profileRows.find((r) => r.id === myId);
-      setMe({ onboarded: Boolean(row?.onboarded), createdAt: row?.created_at ?? new Date().toISOString() });
-    } else {
-      setMe(null);
-    }
-    setDataReady(true);
-  }, [myId, pushToast, t]);
-
-  const scheduleReload = useCallback(() => {
-    window.clearTimeout(reloadTimer.current);
-    reloadTimer.current = window.setTimeout(() => { void load(); }, 400);
-  }, [load]);
-
-  // initial load + reload when the signed-in user changes
   useEffect(() => {
     if (!authReady) return;
-    const run = async () => {
-      if (SUPABASE_CONFIGURED) {
-        // settle any session whose confirmation deadline has passed
-        const { error } = await supabase.rpc('evaluate_sessions');
-        if (error) console.warn('evaluate_sessions', error.message);
-      }
-      await load();
-    };
-    void run();
-  }, [authReady, load]);
+    setProfileLoaded(false);
+    void loadMe();
+    void refreshBookings();
+  }, [authReady, loadMe, refreshBookings]);
 
-  // live updates (realtime) + periodic deadline check
-  useEffect(() => {
-    if (!SUPABASE_CONFIGURED || !authReady) return;
-    const channel = supabase
-      .channel('friendplus-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, scheduleReload)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_players' }, scheduleReload)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'invitations' }, scheduleReload)
-      .subscribe();
-    const interval = window.setInterval(async () => {
-      const { data } = await supabase.rpc('evaluate_sessions');
-      if (typeof data === 'number' && data > 0) scheduleReload();
-    }, 60_000);
-    const onFocus = () => scheduleReload();
-    window.addEventListener('focus', onFocus);
-    return () => {
-      void supabase.removeChannel(channel);
-      window.clearInterval(interval);
-      window.removeEventListener('focus', onFocus);
-    };
-  }, [authReady, scheduleReload]);
-
-  // Adopt the profile language once, right after sign-in
+  // adopt the profile language once, right after sign-in
   const langSynced = useRef('');
   useEffect(() => {
-    if (!myId || langSynced.current === myId || !me) return;
-    const mine = users.find((u) => u.id === myId);
-    if (!mine) return;
-    langSynced.current = myId;
-    if (me.onboarded && mine.lang !== lang) setLang(mine.lang);
-  }, [myId, users, me, lang, setLang]);
-
-  /* ------------------------------ helpers ------------------------------ */
-  const requireAuth = useCallback((): boolean => {
-    if (myId && me?.onboarded) return true;
-    const next = encodeURIComponent(location.pathname + location.search);
-    navigate(myId ? `/bienvenue?next=${next}` : `/connexion?next=${next}`);
-    return false;
-  }, [myId, me, location.pathname, location.search, navigate]);
+    if (!profile || langSynced.current === profile.id) return;
+    langSynced.current = profile.id;
+    if (profile.onboarded && profile.lang !== lang) setLang(profile.lang);
+  }, [profile, lang, setLang]);
 
   /* ------------------------------ actions ------------------------------ */
-  const joinSession = useCallback((sessionId: string) => {
-    if (!requireAuth()) return;
-    const s = sessions.find((x) => x.id === sessionId);
-    void (async () => {
-      const { data, error } = await supabase.rpc('join_session', { p_session: sessionId });
-      if (error) { pushError(error); return; }
-      await load();
-      if (data === 'joined') {
-        pushToast({ kind: 'success', title: t('toast.joined'), body: t('toast.joinedBody', { title: s?.title ?? '', count: (s?.playerIds.length ?? 0) + 1, quota: s?.quota ?? 0 }) });
-      } else if (data === 'lastSpot') {
-        pushToast({ kind: 'celebration', title: t('toast.lastSpot'), body: t('toast.lastSpotBody') });
-      } else if (data === 'waitlist') {
-        pushToast({ kind: 'warning', title: t('toast.waitlist') });
-      } else if (data === 'already') {
-        pushToast({ kind: 'info', title: t('toast.alreadyJoined') });
-      }
-    })();
-  }, [requireAuth, load, sessions, pushToast, pushError, t]);
-
-  const leaveSession = useCallback((sessionId: string) => {
-    if (!requireAuth()) return;
-    void (async () => {
-      const { error } = await supabase.rpc('leave_session', { p_session: sessionId });
-      if (error) { pushError(error); return; }
-      await load();
-      pushToast({ kind: 'info', title: t('toast.leftSession') });
-    })();
-  }, [requireAuth, load, pushToast, pushError, t]);
-
-  const cancelSession = useCallback(async (sessionId: string): Promise<boolean> => {
-    if (!requireAuth()) return false;
-    const { error } = await supabase.rpc('cancel_session', { p_session: sessionId });
-    if (error) { pushError(error); return false; }
-    await load();
-    return true;
-  }, [requireAuth, load, pushError]);
-
-  const createSession = useCallback((input: CreateSessionInput): Session => {
-    const hoursBefore = input.confirmHoursBefore ?? 24;
-    const id = crypto.randomUUID();
-    const optimistic: Session = {
-      id,
-      sport: input.sport,
-      title: input.title,
-      venueId: input.venueId,
-      date: input.date,
-      durationMin: input.durationMin,
-      quota: FIXED_QUOTA[input.sport] ?? input.quota,
-      playerIds: [myId],
-      waitlistIds: [],
-      // shown until the server answers; create_session() recomputes it from sport_rates
-      pricePerPerson: pricePerPlayer(rates, input.sport, input.durationMin, input.quota),
-      level: input.level,
-      mixed: input.mixed,
-      status: 'open',
-      confirmationDeadline: new Date(new Date(input.date).getTime() - hoursBefore * 3600_000).toISOString(),
-      creatorId: myId,
-      description: input.description,
-      createdAt: new Date().toISOString(),
-    };
-    if (!requireAuth()) return optimistic;
-    setSessions((prev) => [optimistic, ...prev]);
-
-    const promise = (async () => {
-      const { error } = await supabase.rpc('create_session', {
-        p_id: id,
-        p_sport: input.sport,
-        p_title: input.title,
-        p_venue_id: input.venueId,
-        p_starts_at: input.date,
-        p_duration_min: input.durationMin,
-        p_quota: input.quota,
-        p_price: 0, // ignored: the server applies the fixed rate
-        p_level: input.level,
-        p_mixed: input.mixed,
-        p_description: input.description,
-        p_confirm_hours: hoursBefore,
-      });
-      if (error) {
-        setSessions((prev) => prev.filter((s) => s.id !== id));
-        pushError(error);
-        return false;
-      }
-      await load();
-      pushToast({ kind: 'success', title: t('toast.sessionCreated'), body: t('toast.sessionCreatedBody') });
-      return true;
-    })();
-    pendingCreates.current.set(id, promise);
-    void promise.finally(() => pendingCreates.current.delete(id));
-    return optimistic;
-  }, [myId, rates, requireAuth, load, pushToast, pushError, t]);
-
-  const sendInvitation = useCallback((sessionId: string, toUserId: string, message = '') => {
-    if (!requireAuth()) return;
-    const target = users.find((u) => u.id === toUserId);
-    void (async () => {
-      const pending = pendingCreates.current.get(sessionId);
-      if (pending && !(await pending)) return; // session creation failed
-      const { error } = await supabase.rpc('send_invitation', { p_session: sessionId, p_to: toUserId, p_message: message });
-      if (error) { pushError(error); return; }
-      pushToast({ kind: 'info', title: t('toast.inviteSent', { name: target?.name ?? '' }) });
-      scheduleReload();
-    })();
-  }, [requireAuth, users, pushToast, pushError, scheduleReload, t]);
-
-  const respondInvitation = useCallback((invitationId: string, accept: boolean) => {
-    if (!requireAuth()) return;
-    setInvitations((prev) => prev.map((i) => (i.id === invitationId ? { ...i, status: accept ? 'accepted' : 'declined' } : i)));
-    void (async () => {
-      const { error } = await supabase.rpc('respond_invitation', { p_invitation: invitationId, p_accept: accept });
-      if (error) pushError(error);
-      await load();
-    })();
-  }, [requireAuth, load, pushError]);
-
   const updateProfile = useCallback(async (patch: ProfilePatch): Promise<boolean> => {
     if (!myId) return false;
     const row: Record<string, unknown> = {};
@@ -516,122 +327,152 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (patch.nationality !== undefined) row.nationality = patch.nationality;
     if (patch.countryCode !== undefined) row.country_code = patch.countryCode;
     if (patch.lang !== undefined) row.lang = patch.lang;
-    if (patch.sports !== undefined) row.sports = patch.sports;
-    if (patch.level !== undefined) row.level = patch.level;
-    if (patch.bio !== undefined) row.bio = patch.bio.slice(0, 140);
+    if (patch.phone !== undefined) row.phone = patch.phone.trim().slice(0, 30);
     if (patch.onboarded !== undefined) row.onboarded = patch.onboarded;
-    if (patch.avatarColor !== undefined) row.avatar_color = patch.avatarColor;
     const { error } = await supabase.from('profiles').update(row).eq('id', myId);
     if (error) { pushError(error); return false; }
-    await load();
+    await loadMe();
     return true;
-  }, [myId, load, pushError]);
+  }, [myId, loadMe, pushError]);
 
-  const setUsername = useCallback(async (username: string): Promise<boolean> => {
-    if (!myId) return false;
-    const { error } = await supabase.rpc('set_username', { p_username: username });
-    if (error) { pushError(error); return false; }
-    await load();
-    return true;
-  }, [myId, load, pushError]);
+  const createBooking = useCallback(async (input: BookingInput): Promise<string | null> => {
+    const { data, error } = await supabase.rpc('create_booking', {
+      p_offer: input.offerId,
+      p_start: input.startDate,
+      p_end: input.endDate,
+      p_time: input.startTime,
+      p_qty: input.qty,
+      p_options: input.optionIds,
+      p_contact_name: input.contactName,
+      p_contact_phone: input.contactPhone,
+      p_pickup: input.pickup,
+      p_notes: input.notes,
+      p_delivery: input.delivery,
+      p_delivery_address: input.deliveryAddress,
+      p_flight: input.flightNumber,
+    });
+    if (error) { pushError(error); return null; }
+    await refreshBookings();
+    return data as string;
+  }, [pushError, refreshBookings]);
 
-  const currentAvatarPath = useCallback(async (): Promise<string | null> => {
-    const { data } = await supabase.from('profiles').select('avatar_path').eq('id', myId).maybeSingle();
-    return (data?.avatar_path as string | null) ?? null;
-  }, [myId]);
-
-  const uploadAvatar = useCallback(async (file: File): Promise<boolean> => {
-    if (!myId) return false;
-    try {
-      const blob = await resizeAvatar(file);
-      const previous = await currentAvatarPath();
-      const path = `${myId}/${Date.now().toString(36)}.jpg`;
-      const up = await supabase.storage.from(AVATAR_BUCKET).upload(path, blob, { contentType: 'image/jpeg', cacheControl: '31536000' });
-      if (up.error) throw up.error;
-      const { error } = await supabase.from('profiles').update({ avatar_path: path }).eq('id', myId);
-      if (error) {
-        await supabase.storage.from(AVATAR_BUCKET).remove([path]);
-        throw error;
-      }
-      if (previous) await supabase.storage.from(AVATAR_BUCKET).remove([previous]);
-      await load();
-      return true;
-    } catch (err) {
-      pushError(err);
+  /** Opens Stripe Checkout for an unpaid booking (full-page redirect). */
+  const payBooking = useCallback(async (bookingId: string): Promise<boolean> => {
+    const { data, error } = await supabase.functions.invoke('create-checkout', { body: { booking_id: bookingId } });
+    let code = '';
+    if (error) {
+      // the function answers {error: "..."} with a 4xx/5xx status
+      try { code = String((await (error as { context?: Response }).context?.json())?.error ?? ''); } catch { code = ''; }
+      pushError(new Error(code || error.message));
       return false;
     }
-  }, [myId, currentAvatarPath, load, pushError]);
-
-  const removeAvatar = useCallback(async (): Promise<boolean> => {
-    if (!myId) return false;
-    const previous = await currentAvatarPath();
-    const { error } = await supabase.from('profiles').update({ avatar_path: null }).eq('id', myId);
-    if (error) { pushError(error); return false; }
-    if (previous) await supabase.storage.from(AVATAR_BUCKET).remove([previous]);
-    await load();
+    const url = (data as { url?: string } | null)?.url;
+    if (!url) { pushError(new Error('err.generic')); return false; }
+    window.location.assign(url);
     return true;
-  }, [myId, currentAvatarPath, load, pushError]);
+  }, [pushError]);
+
+  const cancelUnpaidBooking = useCallback(async (bookingId: string) => {
+    const { error } = await supabase.rpc('cancel_unpaid_booking', { p_booking: bookingId });
+    if (error) { pushError(error); return false; }
+    await refreshBookings();
+    return true;
+  }, [pushError, refreshBookings]);
+
+  const saveTrip = useCallback(async (next: Trip): Promise<boolean> => {
+    if (!myId) return false;
+    const row = {
+      user_id: myId,
+      arrival_date: next.arrivalDate || null,
+      arrival_time: next.arrivalTime,
+      flight_number: next.flightNumber.replace(/\s/g, '').toUpperCase().slice(0, 8),
+      departure_date: next.departureDate || null,
+      stay_type: next.stayType,
+      stay_name: next.stayName.trim().slice(0, 120),
+      stay_address: next.stayAddress.trim().slice(0, 300),
+      travelers: next.travelers,
+      bags: next.bags,
+      notes: next.notes.trim().slice(0, 1000),
+      updated_at: new Date().toISOString(),
+    };
+    const { data, error } = await supabase.from('trips').upsert(row).select('*').single();
+    if (error) { pushError(error); return false; }
+    setTrip(toTrip(data as Row));
+    return true;
+  }, [myId, pushError]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-    setInvitations([]);
-    setMe(null);
-    prevStatuses.current = new Map();
+    setBookings([]);
+    setTrip(null);
+    setProfile(null);
+    setIsAdmin(false);
     langSynced.current = '';
     navigate('/');
   }, [navigate]);
 
-  const resetDemo = useCallback(() => { void signOut(); }, [signOut]);
+  /* -------------------------------- admin -------------------------------- */
+  const adminBookings = useCallback(async () => {
+    const { data, error } = await supabase.rpc('admin_bookings', { p_limit: 500 });
+    if (error) { pushError(error); return []; }
+    return ((data ?? []) as Row[]).map(toBooking);
+  }, [pushError]);
+
+  const adminSetBookingStatus = useCallback(async (id: string, status: BookingStatus, note?: string) => {
+    const { error } = await supabase.rpc('admin_set_booking_status', { p_booking: id, p_status: status, p_note: note ?? null });
+    if (error) { pushError(error); return false; }
+    return true;
+  }, [pushError]);
+
+  const adminSaveOffer = useCallback(async (draft: OfferDraft) => {
+    const { data, error } = await supabase.rpc('admin_save_offer', { p: draft });
+    if (error) { pushError(error); return null; }
+    await refreshOffers();
+    return data as string;
+  }, [pushError, refreshOffers]);
+
+  const adminUploadPhoto = useCallback(async (file: File) => {
+    const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+    const path = `${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from('offer-photos').upload(path, file, { contentType: file.type });
+    if (error) { pushError(error); return null; }
+    return supabase.storage.from('offer-photos').getPublicUrl(path).data.publicUrl;
+  }, [pushError]);
 
   /* ------------------------------- value ------------------------------- */
-  const value = useMemo<StoreContextValue>(() => {
-    const currentUser = users.find((u) => u.id === myId) ?? { ...GUEST, id: myId, lang };
-    const state: StoreState = {
-      currentUserId: myId,
-      users,
-      venues,
-      sessions,
-      invitations,
-      seededAt: me?.createdAt ?? new Date().toISOString(),
-    };
-    return {
-      state,
-      toasts,
-      currentUser,
-      users,
-      venues,
-      rates,
-      sessions,
-      invitations,
-      ready: authReady && dataReady,
-      isAuthenticated: Boolean(myId),
-      profileLoaded: !myId || me !== null,
-      profileComplete: Boolean(me?.onboarded),
-      email: auth?.user.email ?? '',
-      configured: SUPABASE_CONFIGURED,
-      getUser: (id) => users.find((u) => u.id === id),
-      getVenue: (id) => venues.find((v) => v.id === id),
-      getSession: (id) => sessions.find((s) => s.id === id),
-      pendingInvitesForMe: invitations.filter((i) => i.toUserId === myId && i.status === 'pending'),
-      joinSession,
-      leaveSession,
-      cancelSession,
-      createSession,
-      sendInvitation,
-      respondInvitation,
-      updateProfile,
-      setUsername,
-      uploadAvatar,
-      removeAvatar,
-      signOut,
-      resetDemo,
-      dismissToast,
-      pushToast,
-      refresh: load,
-    };
-  }, [users, myId, lang, venues, rates, sessions, invitations, me, toasts, authReady, dataReady, auth,
-    joinSession, leaveSession, cancelSession, createSession, sendInvitation, respondInvitation,
-    updateProfile, setUsername, uploadAvatar, removeAvatar, signOut, resetDemo, dismissToast, pushToast, load]);
+  const value = useMemo<StoreContextValue>(() => ({
+    toasts,
+    configured: SUPABASE_CONFIGURED,
+    ready: authReady && profileLoaded,
+    isAuthenticated: Boolean(myId),
+    profileLoaded: !myId || profileLoaded,
+    profileComplete: Boolean(profile?.onboarded),
+    isAdmin,
+    email: auth?.user.email ?? '',
+    profile,
+    offers,
+    offersReady,
+    bookings,
+    trip,
+    getOffer: (slug) => offers.find((o) => o.slug === slug),
+    updateProfile,
+    createBooking,
+    payBooking,
+    cancelUnpaidBooking,
+    refreshBookings,
+    refreshOffers,
+    saveTrip,
+    signOut,
+    pushToast,
+    pushError,
+    dismissToast,
+    adminBookings,
+    adminSetBookingStatus,
+    adminSaveOffer,
+    adminUploadPhoto,
+  }), [toasts, authReady, profileLoaded, myId, profile, isAdmin, auth, offers, offersReady, bookings, trip,
+    updateProfile, createBooking, payBooking, cancelUnpaidBooking, refreshBookings, refreshOffers, saveTrip, signOut,
+    pushToast, pushError, dismissToast, adminBookings, adminSetBookingStatus, adminSaveOffer, adminUploadPhoto]);
 
   return createElement(StoreContext.Provider, { value }, children);
 }

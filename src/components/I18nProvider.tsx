@@ -5,7 +5,7 @@ import {
   type I18nContextValue,
 } from '@/lib/i18n';
 
-const LANG_KEY = 'friendplus.lang';
+const LANG_KEY = 'mpk.lang';
 
 function loadLang(): Lang {
   try {
@@ -19,7 +19,8 @@ function loadLang(): Lang {
     const base = code.split('-')[0];
     if (LANG_CODES.has(base)) return base as Lang;
   }
-  return 'fr';
+  // tourists from everywhere: English when the phone's language isn't offered
+  return 'en';
 }
 
 export default function I18nProvider({ children }: { children: ReactNode }) {

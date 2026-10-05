@@ -1,8 +1,9 @@
 User-agent: *
 Allow: /
 Disallow: /profil
-Disallow: /mes-sessions
-Disallow: /creer
+Disallow: /reservations
+Disallow: /reserver/
+Disallow: /admin
 Disallow: /bienvenue
 
 Sitemap: https://www.friendplussport.center/sitemap.xml

@@ -1,78 +1,46 @@
 import { NavLink } from 'react-router';
-import { CalendarCheck, CirclePlus, Compass, MessageCircle, UserRound } from 'lucide-react';
+import { CalendarCheck, Compass, House, LayoutDashboard, PlaneLanding, UserRound } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
-import { useClub } from '@/lib/club';
 import { useStore } from '@/lib/store';
-import { useSocial } from '@/lib/social';
-import PlayerAvatar from '@/components/PlayerAvatar';
 import { cn } from '@/lib/utils';
 
-// Home stays one tap away through the logo; the last tab is the player's account.
-const TABS = [
-  { to: '/explorer', key: 'nav.explore', icon: Compass },
-  { to: '/club', key: 'nav.club', icon: MessageCircle },
-  { to: '/creer', key: 'nav.create', icon: CirclePlus, accent: true },
-  { to: '/mes-sessions', key: 'nav.mySessions', icon: CalendarCheck },
-  { to: '/profil', key: 'nav.profile', icon: UserRound, account: true },
-];
-
-/** App-style bottom navigation on phones (hidden from the lg breakpoint, where the top bar has room). */
+/** App-style bottom navigation on phones. */
 export default function MobileTabBar() {
   const { t } = useI18n();
-  const { unreadTotal } = useClub();
-  const { isAuthenticated, currentUser } = useStore();
-  const { incomingIds } = useSocial();
+  const { isAdmin } = useStore();
+  const tabs = [
+    { to: '/', key: 'nav.home', icon: House, end: true },
+    { to: '/mon-arrivee', key: 'nav.arrival', icon: PlaneLanding },
+    { to: '/explorer', key: 'nav.explore', icon: Compass },
+    { to: '/reservations', key: 'nav.bookings', icon: CalendarCheck },
+    ...(isAdmin ? [{ to: '/admin', key: 'nav.admin', icon: LayoutDashboard }] : []),
+    { to: '/profil', key: 'nav.profile', icon: UserRound },
+  ];
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-[#EADFC8] bg-[rgba(251,246,236,.92)] pb-[env(safe-area-inset-bottom)] backdrop-blur-[12px] lg:hidden"
-      aria-label="Navigation"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-sand-dark bg-[rgba(251,246,236,.94)] pb-[env(safe-area-inset-bottom)] backdrop-blur-[12px] md:hidden"
+      aria-label={t('nav.menu')}
     >
       <ul className="mx-auto flex h-16 max-w-lg items-stretch">
-        {TABS.map(({ to, key, icon: Icon, accent, account }) => {
-          const guest = account && !isAuthenticated;
-          const label = guest ? 'nav.signIn' : key;
-          return (
+        {tabs.map(({ to, key, icon: Icon, end }) => (
           <li key={to} className="flex-1">
             <NavLink
-              to={guest ? '/connexion' : to}
-              aria-label={accent ? t(key) : undefined}
+              to={to}
+              end={end}
               className={({ isActive }) => cn(
-                'relative flex h-full flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors',
-                isActive ? 'text-[#0A6E64]' : 'text-[#0B2E2B]/50',
+                'flex h-full flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors',
+                isActive ? 'text-lagoon-deep' : 'text-ink/50',
               )}
             >
               {({ isActive }) => (
                 <>
-                  {accent ? (
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-coral-pop text-white shadow-coral">
-                      <Icon className="h-5 w-5" strokeWidth={2.4} />
-                    </span>
-                  ) : account && isAuthenticated ? (
-                    <span className={cn('relative rounded-full', isActive && 'ring-2 ring-[#0A6E64] ring-offset-1 ring-offset-[#FBF6EC]')}>
-                      <PlayerAvatar user={currentUser} size={24} ring={false} />
-                      {incomingIds.length > 0 && (
-                        <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF6B4A] px-1 text-[9px] font-bold text-white ring-2 ring-[#FBF6EC]">
-                          {incomingIds.length}
-                        </span>
-                      )}
-                    </span>
-                  ) : (
-                    <span className="relative">
-                      <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2.4 : 1.9} />
-                      {to === '/club' && unreadTotal > 0 && (
-                        <span className="absolute -right-2.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#FF6B4A] px-1 text-[9px] font-bold text-white ring-2 ring-[#FBF6EC]">
-                          {unreadTotal > 99 ? '99+' : unreadTotal}
-                        </span>
-                      )}
-                    </span>
-                  )}
-                  {!accent && <span className="max-w-full truncate px-1">{t(label)}</span>}
+                  <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2.4 : 1.9} />
+                  <span className="max-w-full truncate px-1">{t(key)}</span>
                 </>
               )}
             </NavLink>
           </li>
-          );
-        })}
+        ))}
       </ul>
     </nav>
   );

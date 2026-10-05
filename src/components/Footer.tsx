@@ -1,141 +1,55 @@
 import { Link } from 'react-router';
-import { motion } from 'framer-motion';
-import { useI18n, LANGS } from '@/lib/i18n';
-import { cn } from '@/lib/utils';
-import SportIcon from './SportIcon';
-import { SPORTS } from '@/lib/sports';
-
+import { Mail, MessageCircle } from 'lucide-react';
+import { CATEGORIES } from '@/lib/catalog';
+import { CONTACT_EMAIL, CONTACT_WHATSAPP, contactHref } from '@/lib/config';
+import { useI18n } from '@/lib/i18n';
+import Logo from './Logo';
+import LanguageSelect from './LanguageSelect';
 
 export default function Footer() {
-  const { t, lang, setLang } = useI18n();
-
-  const cols = [
-    {
-      title: t('footer.col.explore'),
-      links: [
-        { to: '/explorer', label: t('nav.explore') },
-        { to: '/mes-sessions', label: t('footer.mySessions') },
-        { to: '/creer', label: t('footer.createSession') },
-      ],
-    },
-    {
-      title: t('footer.col.sports'),
-      links: SPORTS.map((s) => ({ to: `/explorer?sport=${s}`, label: t(`sport.${s}`) })),
-    },
-    {
-      title: t('footer.col.info'),
-      links: [
-        { to: '/#how-it-works', label: t('footer.howItWorks') },
-        { to: '/salles', label: t('footer.partnerVenues') },
-        { to: '/profil', label: t('footer.contact') },
-        { to: '/confidentialite', label: t('footer.privacy') },
-      ],
-    },
-  ];
-
+  const { t } = useI18n();
   return (
-    <footer className="relative">
-      {/* wave top (dark wave rising into the light section above) */}
-      <div
-        aria-hidden
-        className="h-[60px] w-full md:h-[90px]"
-        style={{
-          backgroundColor: '#0B2E2B',
-          maskImage: 'url(/wave-divider.svg)',
-          WebkitMaskImage: 'url(/wave-divider.svg)',
-          maskSize: '100% 100%',
-          WebkitMaskSize: '100% 100%',
-          maskRepeat: 'no-repeat',
-        }}
-      />
-      <div className="relative bg-[#0B2E2B]">
-        {/* palm watermark */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundColor: 'rgba(255,255,255,0.05)',
-            maskImage: 'url(/texture-palm.svg)',
-            WebkitMaskImage: 'url(/texture-palm.svg)',
-            maskSize: '560px',
-            WebkitMaskSize: '560px',
-          }}
-        />
-        <div className="relative mx-auto max-w-[1280px] px-6 pb-10 pt-14 lg:px-12">
-          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <Link to="/" className="flex items-center gap-2.5">
-                <img src="/logo.svg" alt="FRIEND+" className="h-10 w-10" />
-                <span dir="ltr" className="leading-none">
-                  <span className="font-display text-xl font-extrabold tracking-tight text-white">
-                    FRIEND<span className="text-[#FF6B4A]">+</span>
-                  </span>
-                  <span className="block text-[10px] font-semibold uppercase tracking-[0.22em] text-white/50">
-                    Sport Phuket
-                  </span>
-                </span>
-              </Link>
-              <p className="mt-4 max-w-[240px] text-sm leading-relaxed text-white/55">{t('footer.tagline')}</p>
-            </motion.div>
-
-            {cols.map((col, ci) => (
-              <motion.div
-                key={col.title}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.5, delay: 0.08 * (ci + 1), ease: [0.22, 1, 0.36, 1] }}
-              >
-                <h4 className="text-xs font-bold uppercase tracking-[0.18em] text-[#2FBFA5]">{col.title}</h4>
-                <ul className="mt-4 space-y-2.5">
-                  {col.links.map((l) => (
-                    <li key={l.label}>
-                      <Link to={l.to} className="text-sm text-white/65 transition-colors hover:text-white">
-                        {l.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
+    <footer className="bg-ink text-white">
+      <div className="mx-auto grid max-w-[1200px] gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.3fr_1fr_1fr]">
+        <div>
+          <Logo dark />
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/60">{t('home.hero.subtitle')}</p>
+          <LanguageSelect dark className="mt-5 w-fit" />
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/45">{t('footer.services')}</p>
+          <ul className="mt-4 grid gap-2 text-sm">
+            {CATEGORIES.map((c) => (
+              <li key={c.id}>
+                <Link to={`/explorer?cat=${c.id}`} className="text-white/75 hover:text-white">{t(`cat.${c.id}`)}</Link>
+              </li>
             ))}
-          </div>
-
-          {/* sport icons strip */}
-          <div className="mt-10 flex flex-wrap gap-3 border-t border-white/10 pt-8">
-            {SPORTS.map((s) => (
-              <span key={s} className="inline-flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 text-xs font-semibold text-white/60">
-                <SportIcon sport={s} className="h-3.5 w-3.5 text-[#2FBFA5]" />
-                {t(`sport.${s}`)}
-              </span>
-            ))}
-          </div>
-
-          <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-6 sm:flex-row sm:items-center">
-            <p className="text-xs text-white/45">
-              {t('footer.demo')} · {t('footer.rights')}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {LANGS.map((l) => (
-                <button
-                  key={l.code}
-                  onClick={() => setLang(l.code)}
-                  className={cn(
-                    'rounded-full px-3 py-1.5 text-xs font-bold transition-colors',
-                    lang === l.code ? 'bg-white text-[#0B2E2B]' : 'text-white/50 hover:text-white',
-                  )}
-                >
-                  {l.code.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          </div>
+          </ul>
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/45">{t('footer.help')}</p>
+          <ul className="mt-4 grid gap-2 text-sm">
+            <li><Link to="/reservations" className="text-white/75 hover:text-white">{t('nav.bookings')}</Link></li>
+            <li><Link to="/conditions" className="text-white/75 hover:text-white">{t('footer.terms')}</Link></li>
+            <li><Link to="/confidentialite" className="text-white/75 hover:text-white">{t('footer.privacy')}</Link></li>
+            <li>
+              <a href={`mailto:${CONTACT_EMAIL}`} className="inline-flex items-center gap-1.5 text-white/75 hover:text-white">
+                <Mail className="h-4 w-4" /> {CONTACT_EMAIL}
+              </a>
+            </li>
+            {CONTACT_WHATSAPP && (
+              <li>
+                <a href={contactHref()} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-white/75 hover:text-white">
+                  <MessageCircle className="h-4 w-4" /> WhatsApp
+                </a>
+              </li>
+            )}
+          </ul>
         </div>
       </div>
+      <p className="border-t border-white/10 py-5 text-center text-xs text-white/40">
+        {t('footer.rights', { year: new Date().getFullYear() })}
+      </p>
     </footer>
   );
 }
