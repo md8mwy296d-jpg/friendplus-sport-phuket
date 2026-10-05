@@ -1,7 +1,9 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import type { Session as AuthSession } from '@supabase/supabase-js';
-import type { Booking, BookingStatus, CategoryId, Lang, Offer, OfferOption, Profile, ToastItem } from './types';
+import type {
+  ArrivalNeed, Booking, BookingStatus, CategoryId, DeliveryMode, Lang, Offer, OfferOption, Profile, ToastItem, Trip,
+} from './types';
 import { useI18n } from './i18n';
 import { supabase, SUPABASE_CONFIGURED } from './supabase';
 
@@ -25,6 +27,9 @@ export interface BookingInput {
   contactPhone: string;
   pickup: string;
   notes: string;
+  delivery: DeliveryMode;
+  deliveryAddress: string;
+  flightNumber: string;
 }
 
 /** Offer as edited in the admin form (snake_case, sent as-is to admin_save_offer). */
@@ -53,6 +58,9 @@ export interface OfferDraft {
   featured: boolean;
   active: boolean;
   sort: number;
+  delivery_airport_thb: number | null;
+  delivery_address_thb: number | null;
+  arrival_covers: ArrivalNeed[];
 }
 
 export interface StoreContextValue {
@@ -70,6 +78,8 @@ export interface StoreContextValue {
   offers: Offer[];
   offersReady: boolean;
   bookings: Booking[];
+  /** The customer's arrival (null = not filled in yet). */
+  trip: Trip | null;
   getOffer: (slug: string) => Offer | undefined;
   // actions
   updateProfile: (patch: ProfilePatch) => Promise<boolean>;
@@ -78,6 +88,7 @@ export interface StoreContextValue {
   cancelUnpaidBooking: (bookingId: string) => Promise<boolean>;
   refreshBookings: () => Promise<void>;
   refreshOffers: () => Promise<void>;
+  saveTrip: (trip: Trip) => Promise<boolean>;
   signOut: () => Promise<void>;
   pushToast: (toast: Omit<ToastItem, 'id'>) => void;
   pushError: (err: unknown) => void;
@@ -130,6 +141,9 @@ export function toOffer(r: Row): Offer {
     featured: Boolean(r.featured),
     active: r.active !== false,
     sort: r.sort ?? 0,
+    deliveryAirportThb: r.delivery_airport_thb ?? null,
+    deliveryAddressThb: r.delivery_address_thb ?? null,
+    arrivalCovers: r.arrival_covers || [],
   };
 }
 
@@ -155,7 +169,27 @@ function toBooking(r: Row): Booking {
     adminNote: r.admin_note || '',
     paidAt: r.paid_at ?? null,
     createdAt: r.created_at,
+    delivery: (['airport', 'address'].includes(r.delivery) ? r.delivery : 'none') as DeliveryMode,
+    deliveryFeeThb: r.delivery_fee_thb ?? 0,
+    deliveryAddress: r.delivery_address || '',
+    flightNumber: r.flight_number || '',
     email: r.email ?? undefined,
+    trip: r.trip ? toTrip(r.trip as Row) : r.trip === null ? null : undefined,
+  };
+}
+
+export function toTrip(r: Row): Trip {
+  return {
+    arrivalDate: r.arrival_date || '',
+    arrivalTime: r.arrival_time || '',
+    flightNumber: r.flight_number || '',
+    departureDate: r.departure_date || '',
+    stayType: r.stay_type || 'hotel',
+    stayName: r.stay_name || '',
+    stayAddress: r.stay_address || '',
+    travelers: r.travelers ?? 2,
+    bags: r.bags ?? 2,
+    notes: r.notes || '',
   };
 }
 
@@ -173,7 +207,7 @@ function toProfile(r: Row): Profile {
 
 const KNOWN_ERRORS = [
   'not_authenticated', 'not_found', 'not_allowed', 'rate_limited', 'invalid_input', 'invalid_date',
-  'invalid_quantity', 'invalid_contact', 'not_payable', 'payments_not_configured',
+  'invalid_quantity', 'invalid_contact', 'invalid_delivery', 'not_payable', 'payments_not_configured',
 ];
 
 export function errorKey(err: unknown): string {
@@ -196,6 +230,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [offersReady, setOffersReady] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [trip, setTrip] = useState<Trip | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const myId = auth?.user.id ?? '';
 
@@ -249,16 +284,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!SUPABASE_CONFIGURED || !myId) {
       setProfile(null);
       setIsAdmin(false);
+      setTrip(null);
       setProfileLoaded(true);
       return;
     }
-    const [pRes, aRes] = await Promise.all([
+    const [pRes, aRes, tRes] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', myId).maybeSingle(),
       supabase.from('app_admins').select('user_id').eq('user_id', myId),
+      supabase.from('trips').select('*').eq('user_id', myId).maybeSingle(),
     ]);
     if (pRes.error) console.error(pRes.error);
+    if (tRes.error) console.error(tRes.error);
     setProfile(pRes.data ? toProfile(pRes.data as Row) : null);
     setIsAdmin(((aRes.data ?? []) as Row[]).length > 0);
+    setTrip(tRes.data ? toTrip(tRes.data as Row) : null);
     setProfileLoaded(true);
   }, [myId]);
 
@@ -308,6 +347,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       p_contact_phone: input.contactPhone,
       p_pickup: input.pickup,
       p_notes: input.notes,
+      p_delivery: input.delivery,
+      p_delivery_address: input.deliveryAddress,
+      p_flight: input.flightNumber,
     });
     if (error) { pushError(error); return null; }
     await refreshBookings();
@@ -337,9 +379,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return true;
   }, [pushError, refreshBookings]);
 
+  const saveTrip = useCallback(async (next: Trip): Promise<boolean> => {
+    if (!myId) return false;
+    const row = {
+      user_id: myId,
+      arrival_date: next.arrivalDate || null,
+      arrival_time: next.arrivalTime,
+      flight_number: next.flightNumber.replace(/\s/g, '').toUpperCase().slice(0, 8),
+      departure_date: next.departureDate || null,
+      stay_type: next.stayType,
+      stay_name: next.stayName.trim().slice(0, 120),
+      stay_address: next.stayAddress.trim().slice(0, 300),
+      travelers: next.travelers,
+      bags: next.bags,
+      notes: next.notes.trim().slice(0, 1000),
+      updated_at: new Date().toISOString(),
+    };
+    const { data, error } = await supabase.from('trips').upsert(row).select('*').single();
+    if (error) { pushError(error); return false; }
+    setTrip(toTrip(data as Row));
+    return true;
+  }, [myId, pushError]);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setBookings([]);
+    setTrip(null);
     setProfile(null);
     setIsAdmin(false);
     langSynced.current = '';
@@ -388,6 +453,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     offers,
     offersReady,
     bookings,
+    trip,
     getOffer: (slug) => offers.find((o) => o.slug === slug),
     updateProfile,
     createBooking,
@@ -395,6 +461,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     cancelUnpaidBooking,
     refreshBookings,
     refreshOffers,
+    saveTrip,
     signOut,
     pushToast,
     pushError,
@@ -403,8 +470,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     adminSetBookingStatus,
     adminSaveOffer,
     adminUploadPhoto,
-  }), [toasts, authReady, profileLoaded, myId, profile, isAdmin, auth, offers, offersReady, bookings,
-    updateProfile, createBooking, payBooking, cancelUnpaidBooking, refreshBookings, refreshOffers, signOut,
+  }), [toasts, authReady, profileLoaded, myId, profile, isAdmin, auth, offers, offersReady, bookings, trip,
+    updateProfile, createBooking, payBooking, cancelUnpaidBooking, refreshBookings, refreshOffers, saveTrip, signOut,
     pushToast, pushError, dismissToast, adminBookings, adminSetBookingStatus, adminSaveOffer, adminUploadPhoto]);
 
   return createElement(StoreContext.Provider, { value }, children);

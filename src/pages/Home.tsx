@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
-import { ArrowRight, Headset, MapPinned, Search, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Headset, Luggage, MapPinned, Motorbike, PlaneLanding, Search, ShieldCheck } from 'lucide-react';
 import { CATEGORIES } from '@/lib/catalog';
 import { contactHref } from '@/lib/config';
 import { useI18n } from '@/lib/i18n';
@@ -78,6 +78,33 @@ export default function Home() {
         </div>
       </section>
 
+      {/* airport concierge: everything ready on landing */}
+      <section className="mx-auto max-w-[1200px] px-4 pt-10 sm:px-6">
+        <Link
+          to="/mon-arrivee"
+          className="group grid gap-5 rounded-[24px] border border-sand-dark bg-white p-6 shadow-paper transition-transform hover:-translate-y-0.5 md:grid-cols-[1fr_auto] md:items-center md:p-8"
+        >
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-coral">{t('arrival.eyebrow')}</p>
+            <h2 className="mt-2 font-display text-2xl font-bold text-ink md:text-3xl">{t('arrival.title')}</h2>
+            <ul className="mt-4 grid gap-2 text-sm text-ink/70 sm:grid-cols-3">
+              {[
+                { icon: PlaneLanding, key: 'welcome' },
+                { icon: Motorbike, key: 'ride' },
+                { icon: Luggage, key: 'bags' },
+              ].map(({ icon: Icon, key }) => (
+                <li key={key} className="flex items-center gap-2">
+                  <Icon className="h-4 w-4 shrink-0 text-lagoon" /> {t(`arrival.step.${key}`)}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <span className="inline-flex h-12 items-center justify-center gap-1.5 rounded-full bg-coral-pop px-6 text-sm font-bold text-white shadow-coral">
+            {t('arrival.cta')} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </span>
+        </Link>
+      </section>
+
       {/* categories */}
       <section className="mx-auto max-w-[1200px] px-4 pt-12 sm:px-6">
         <h2 className="font-display text-2xl font-bold text-ink md:text-3xl">{t('home.categories.title')}</h2>
@@ -91,7 +118,6 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.4, delay: i * 0.03, ease: EASE }}
-                className={i === 0 ? 'col-span-2 sm:col-span-1' : ''}
               >
                 <Link
                   to={`/explorer?cat=${c.id}`}

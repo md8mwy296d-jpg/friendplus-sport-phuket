@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 import type { BaseLang, Lang } from './types';
 import { BASE_DICTS } from './i18n-base';
 import { APP_DICTS } from './i18n-app';
+import { ARRIVAL_DICTS } from './i18n-arrival';
 
 export type Dict = Record<string, string>;
 
@@ -63,10 +64,10 @@ export const LOCALE_MAP: Record<Lang, string> = {
 };
 
 export const DICTS: Record<BaseLang, Dict> = {
-  fr: { ...BASE_DICTS.fr, ...APP_DICTS.fr },
-  en: { ...BASE_DICTS.en, ...APP_DICTS.en },
-  ru: { ...BASE_DICTS.ru, ...APP_DICTS.ru },
-  th: { ...BASE_DICTS.th, ...APP_DICTS.th },
+  fr: { ...BASE_DICTS.fr, ...APP_DICTS.fr, ...ARRIVAL_DICTS.fr },
+  en: { ...BASE_DICTS.en, ...APP_DICTS.en, ...ARRIVAL_DICTS.en },
+  ru: { ...BASE_DICTS.ru, ...APP_DICTS.ru, ...ARRIVAL_DICTS.ru },
+  th: { ...BASE_DICTS.th, ...APP_DICTS.th, ...ARRIVAL_DICTS.th },
 };
 
 export interface I18nContextValue {

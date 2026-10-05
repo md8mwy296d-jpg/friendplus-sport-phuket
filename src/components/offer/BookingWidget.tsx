@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Check, Minus, Plus, ShieldCheck } from 'lucide-react';
-import type { Offer } from '@/lib/types';
-import { addDays, daysBetween, estimateAmount, todayInPhuket, usesDateRange } from '@/lib/catalog';
+import { Check, Hotel, MapPin, Minus, PlaneLanding, Plus, ShieldCheck } from 'lucide-react';
+import type { DeliveryMode, Offer } from '@/lib/types';
+import { addDays, daysBetween, deliveryFee, estimateAmount, todayInPhuket, usesDateRange } from '@/lib/catalog';
 import { useI18n } from '@/lib/i18n';
 import type { BookingChoice } from '@/lib/booking';
 import { cn } from '@/lib/utils';
@@ -21,10 +21,14 @@ export default function BookingWidget({ offer, onContinue, initial }: {
   const [time, setTime] = useState(initial?.time ?? '');
   const [qty, setQty] = useState(Math.min(offer.maxQty, Math.max(offer.minQty, initial?.qty ?? offer.minQty)));
   const [optionIds, setOptionIds] = useState<string[]>(initial?.optionIds ?? []);
+  const modes = (['none', 'airport', 'address'] as DeliveryMode[]).filter((m) => deliveryFee(offer, m) !== null);
+  const [delivery, setDelivery] = useState<DeliveryMode>(
+    initial?.delivery && modes.includes(initial.delivery) ? initial.delivery : 'none',
+  );
   const [error, setError] = useState('');
 
   const units = range ? daysBetween(start, end) : 1;
-  const total = estimateAmount(offer, qty, Math.max(units, 1), optionIds);
+  const total = estimateAmount(offer, qty, Math.max(units, 1), optionIds) + (deliveryFee(offer, delivery) ?? 0);
   const valid = Boolean(start) && start >= today && (!range || units >= 1);
 
   const toggle = (id: string) =>
@@ -32,7 +36,7 @@ export default function BookingWidget({ offer, onContinue, initial }: {
 
   const submit = () => {
     if (!valid) { setError(t('checkout.errDate')); return; }
-    onContinue({ start, end: range ? end : null, time, qty, optionIds });
+    onContinue({ start, end: range ? end : null, time, qty, optionIds, delivery });
   };
 
   const inputCls = 'mt-1.5 h-11 w-full rounded-xl border border-sand-dark bg-sand/60 px-3 text-[15px] text-ink outline-none focus:border-lagoon focus:bg-white';
@@ -109,6 +113,38 @@ export default function BookingWidget({ offer, onContinue, initial }: {
             <p className="mt-1 text-[11px] text-ink/45">{t('book.range', { min: offer.minQty, max: offer.maxQty })}</p>
           )}
         </div>
+
+        {modes.length > 1 && (
+          <div>
+            <span className={labelCls}>{t('book.delivery')}</span>
+            <div className="mt-1.5 grid gap-1.5" role="radiogroup" aria-label={t('book.delivery')}>
+              {modes.map((m) => {
+                const on = delivery === m;
+                const Icon = m === 'airport' ? PlaneLanding : m === 'address' ? Hotel : MapPin;
+                const fee = deliveryFee(offer, m) ?? 0;
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => setDelivery(m)}
+                    className={cn(
+                      'flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors',
+                      on ? 'border-lagoon bg-lagoon/5' : 'border-sand-dark hover:border-lagoon/50',
+                    )}
+                  >
+                    <Icon className={cn('h-4 w-4 shrink-0', on ? 'text-lagoon' : 'text-ink/40')} />
+                    <span className="flex-1 font-medium text-ink">{t(`book.delivery.${m}`)}</span>
+                    {m !== 'none' && (
+                      <span className={fee ? 'text-ink/60' : 'font-semibold text-lagoon'}>{fee ? `+${formatTHB(fee)}` : t('book.free')}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {offer.options.length > 0 && (
           <div>

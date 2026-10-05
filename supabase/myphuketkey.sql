@@ -108,13 +108,14 @@ grant execute on function public.delete_my_account() to authenticated;
 --   day    : prix × jours × quantité (véhicules) (scooter, moto)
 --   night  : prix × nuits                       (hôtel, villa)
 --   hour   : prix × heures                      (nounou, ménage, beauté)
+--   item   : prix × quantité                    (bagages livrés)
 -- options : [{ "id": "insurance", "label": "Assurance premium", "price_thb": 300, "per": "booking" | "unit" }]
 --   « unit » se multiplie comme le prix de base, « booking » est compté une fois.
 create table if not exists public.offers (
   id              uuid primary key default gen_random_uuid(),
   slug            text not null unique check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and char_length(slug) between 3 and 80),
   category        text not null check (category in
-                    ('scooter','excursion','boat','stay','nightlife','nanny','cleaning','beauty','helicopter')),
+                    ('arrival','scooter','excursion','boat','stay','nightlife','nanny','cleaning','beauty','helicopter')),
   title           text not null check (char_length(title) between 3 and 120),
   summary         text not null default '' check (char_length(summary) <= 300),
   description     text not null default '' check (char_length(description) <= 5000),
@@ -125,7 +126,7 @@ create table if not exists public.offers (
   meeting_point   text not null default '' check (char_length(meeting_point) <= 300),
   duration_label  text not null default '' check (char_length(duration_label) <= 60),
   price_thb       integer not null check (price_thb between 1 and 5000000),
-  price_unit      text not null check (price_unit in ('person','group','day','night','hour')),
+  price_unit      text not null check (price_unit in ('person','group','day','night','hour','item')),
   min_qty         integer not null default 1 check (min_qty between 1 and 100),
   max_qty         integer not null default 10 check (max_qty between 1 and 200),
   options         jsonb not null default '[]'::jsonb check (jsonb_typeof(options) = 'array'),
@@ -141,6 +142,20 @@ create table if not exists public.offers (
   check (min_qty <= max_qty)
 );
 create index if not exists offers_category_idx on public.offers (category, sort) where active;
+
+-- Programme d'arrivée : livraison à l'aéroport ou à l'adresse du client (frais en THB, vide = non proposé)
+alter table public.offers add column if not exists delivery_airport_thb integer check (delivery_airport_thb between 0 and 100000);
+alter table public.offers add column if not exists delivery_address_thb integer check (delivery_address_thb between 0 and 100000);
+-- ce que l'offre règle pour l'atterrissage (checklist « Mon arrivée ») : welcome = accueil/transfert, ride = véhicule, bags = bagages
+alter table public.offers add column if not exists arrival_covers text[] not null default '{}'
+  check (arrival_covers <@ array['welcome','ride','bags']::text[]);
+-- catégorie « arrival » et unité « item » ajoutées après la première version
+alter table public.offers drop constraint if exists offers_category_check;
+alter table public.offers add constraint offers_category_check check (category in
+  ('arrival','scooter','excursion','boat','stay','nightlife','nanny','cleaning','beauty','helicopter'));
+alter table public.offers drop constraint if exists offers_price_unit_check;
+alter table public.offers add constraint offers_price_unit_check check (price_unit in
+  ('person','group','day','night','hour','item'));
 
 alter table public.offers enable row level security;
 drop policy if exists "offres visibles" on public.offers;
@@ -179,6 +194,14 @@ create table if not exists public.bookings (
   updated_at             timestamptz not null default now()
 );
 create index if not exists bookings_user_idx on public.bookings (user_id, created_at desc);
+-- livraison : none = le client vient chercher / est pris en charge, airport = remis à l'arrivée, address = livré à son hôtel/villa
+alter table public.bookings add column if not exists delivery text not null default 'none'
+  check (delivery in ('none','airport','address'));
+alter table public.bookings add column if not exists delivery_fee_thb integer not null default 0 check (delivery_fee_thb >= 0);
+alter table public.bookings add column if not exists delivery_address text not null default ''
+  check (char_length(delivery_address) <= 300);
+alter table public.bookings add column if not exists flight_number text not null default ''
+  check (char_length(flight_number) <= 12);
 create index if not exists bookings_status_idx on public.bookings (status, start_date);
 
 alter table public.bookings enable row level security;
@@ -188,6 +211,39 @@ create policy "mes reservations" on public.bookings for select to authenticated
 revoke all on public.bookings from anon;
 revoke insert, update, delete on public.bookings from authenticated;
 grant select on public.bookings to authenticated;
+
+-- Mon voyage : arrivée, vol, hébergement. La conciergerie prépare tout pour l'atterrissage
+-- (scooter remis à l'aéroport, bagages livrés à l'hôtel ou la villa…). Une fiche par client.
+create table if not exists public.trips (
+  user_id        uuid primary key references public.profiles(id) on delete cascade,
+  arrival_date   date,
+  arrival_time   text not null default '' check (arrival_time = '' or arrival_time ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'),
+  flight_number  text not null default '' check (flight_number ~ '^[A-Z0-9]{0,8}$'),
+  departure_date date,
+  stay_type      text not null default 'hotel' check (stay_type in ('hotel','villa','condo','other')),
+  stay_name      text not null default '' check (char_length(stay_name) <= 120),
+  stay_address   text not null default '' check (char_length(stay_address) <= 300),
+  travelers      integer not null default 2 check (travelers between 1 and 30),
+  bags           integer not null default 2 check (bags between 0 and 40),
+  notes          text not null default '' check (char_length(notes) <= 1000),
+  updated_at     timestamptz not null default now(),
+  check (departure_date is null or arrival_date is null or departure_date >= arrival_date)
+);
+alter table public.trips enable row level security;
+drop policy if exists "mon voyage" on public.trips;
+create policy "mon voyage" on public.trips for select to authenticated
+  using (user_id = auth.uid() or public.is_app_admin());
+drop policy if exists "je crée mon voyage" on public.trips;
+create policy "je crée mon voyage" on public.trips for insert to authenticated
+  with check (user_id = auth.uid());
+drop policy if exists "je modifie mon voyage" on public.trips;
+create policy "je modifie mon voyage" on public.trips for update to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+drop policy if exists "je supprime mon voyage" on public.trips;
+create policy "je supprime mon voyage" on public.trips for delete to authenticated
+  using (user_id = auth.uid());
+revoke all on public.trips from anon;
+grant select, insert, update, delete on public.trips to authenticated;
 
 -- Prix calculé côté serveur à partir de l'offre (l'app ne fait qu'afficher une estimation)
 create or replace function public._booking_amount(o public.offers, p_qty integer, p_units integer, p_option_ids text[])
@@ -204,6 +260,7 @@ begin
     when 'day'    then p_units * p_qty
     when 'night'  then p_units
     when 'hour'   then p_qty
+    when 'item'   then p_qty
   end;
   v_total := o.price_thb::bigint * v_mult;
   chosen := '[]'::jsonb;
@@ -220,9 +277,13 @@ begin
 end $$;
 revoke execute on function public._booking_amount(public.offers, integer, integer, text[]) from public, anon, authenticated;
 
+-- ancienne version sans livraison
+drop function if exists public.create_booking(uuid, date, date, text, integer, text[], text, text, text, text);
+
 create or replace function public.create_booking(
   p_offer uuid, p_start date, p_end date, p_time text, p_qty integer, p_options text[],
-  p_contact_name text, p_contact_phone text, p_pickup text, p_notes text
+  p_contact_name text, p_contact_phone text, p_pickup text, p_notes text,
+  p_delivery text, p_delivery_address text, p_flight text
 ) returns uuid language plpgsql security definer set search_path = public as $$
 declare
   me uuid := auth.uid();
@@ -230,6 +291,10 @@ declare
   v_today date := (now() at time zone 'Asia/Bangkok')::date;
   v_units integer := 1;
   v_price record;
+  v_delivery text := coalesce(nullif(p_delivery, ''), 'none');
+  v_fee integer := 0;
+  v_flight text := upper(regexp_replace(coalesce(p_flight, ''), '\s', '', 'g'));
+  v_address text := left(trim(coalesce(p_delivery_address, '')), 300);
   v_id uuid;
 begin
   if me is null then raise exception 'not_authenticated'; end if;
@@ -252,13 +317,31 @@ begin
     raise exception 'rate_limited';
   end if;
 
+  -- livraison : seulement si l'offre la propose ; aéroport = numéro de vol, adresse = hôtel/villa
+  if v_delivery = 'airport' then
+    if o.delivery_airport_thb is null or v_flight !~ '^[A-Z0-9]{3,8}$' then raise exception 'invalid_delivery'; end if;
+    v_fee := o.delivery_airport_thb;
+    v_address := 'Aéroport de Phuket (HKT)';
+  elsif v_delivery = 'address' then
+    if o.delivery_address_thb is null or char_length(v_address) < 5 then raise exception 'invalid_delivery'; end if;
+    v_fee := o.delivery_address_thb;
+    v_flight := '';
+  elsif v_delivery = 'none' then
+    v_address := '';
+    v_flight := left(v_flight, 12);
+  else
+    raise exception 'invalid_delivery';
+  end if;
+
   select * into v_price from public._booking_amount(o, p_qty, v_units, p_options);
 
   insert into public.bookings (user_id, offer_id, offer_title, category, start_date, end_date, start_time, qty, units,
-                               options, amount_thb, contact_name, contact_phone, pickup, notes)
+                               options, amount_thb, contact_name, contact_phone, pickup, notes,
+                               delivery, delivery_fee_thb, delivery_address, flight_number)
   values (me, o.id, o.title, o.category, p_start, p_end, coalesce(nullif(trim(p_time), ''), ''), p_qty, v_units,
-          v_price.chosen, v_price.amount, trim(p_contact_name), trim(p_contact_phone),
-          left(trim(coalesce(p_pickup, '')), 300), left(trim(coalesce(p_notes, '')), 1000))
+          v_price.chosen, v_price.amount + v_fee, trim(p_contact_name), trim(p_contact_phone),
+          left(trim(coalesce(p_pickup, '')), 300), left(trim(coalesce(p_notes, '')), 1000),
+          v_delivery, v_fee, v_address, v_flight)
   returning id into v_id;
   return v_id;
 end $$;
@@ -361,6 +444,9 @@ begin
     featured       = coalesce((p->>'featured')::boolean, false),
     active         = coalesce((p->>'active')::boolean, true),
     sort           = coalesce((p->>'sort')::int, 0),
+    delivery_airport_thb = nullif(p->>'delivery_airport_thb', '')::int,
+    delivery_address_thb = nullif(p->>'delivery_address_thb', '')::int,
+    arrival_covers = coalesce(array(select jsonb_array_elements_text(p->'arrival_covers')), '{}'),
     updated_at     = now()
   where id = v_id;
   return v_id;
@@ -377,30 +463,36 @@ begin
   if not found then raise exception 'not_found'; end if;
 end $$;
 
--- Liste des réservations pour l'admin, avec l'e-mail du client
+-- Liste des réservations pour l'admin, avec l'e-mail du client, la livraison et son arrivée
+drop function if exists public.admin_bookings(integer);
 create or replace function public.admin_bookings(p_limit integer default 300)
 returns table (
   id uuid, ref text, status text, offer_title text, category text, start_date date, end_date date,
   start_time text, qty integer, units integer, options jsonb, amount_thb integer,
   contact_name text, contact_phone text, pickup text, notes text, admin_note text,
-  email text, paid_at timestamptz, created_at timestamptz
+  email text, paid_at timestamptz, created_at timestamptz,
+  delivery text, delivery_fee_thb integer, delivery_address text, flight_number text,
+  trip jsonb
 ) language plpgsql stable security definer set search_path = public, auth as $$
 begin
   if not public.is_app_admin() then raise exception 'not_allowed'; end if;
   return query
     select b.id, b.ref, b.status, b.offer_title, b.category, b.start_date, b.end_date, b.start_time,
            b.qty, b.units, b.options, b.amount_thb, b.contact_name, b.contact_phone, b.pickup, b.notes,
-           b.admin_note, u.email::text, b.paid_at, b.created_at
+           b.admin_note, u.email::text, b.paid_at, b.created_at,
+           b.delivery, b.delivery_fee_thb, b.delivery_address, b.flight_number,
+           case when t.user_id is null then null else to_jsonb(t) - 'user_id' end
       from public.bookings b
       left join auth.users u on u.id = b.user_id
+      left join public.trips t on t.user_id = b.user_id
      where b.status <> 'expired' or b.created_at > now() - interval '3 days'
      order by b.created_at desc
      limit least(greatest(p_limit, 1), 1000);
 end $$;
 
 -- Droits d'exécution
-revoke execute on function public.create_booking(uuid, date, date, text, integer, text[], text, text, text, text) from public, anon;
-grant  execute on function public.create_booking(uuid, date, date, text, integer, text[], text, text, text, text) to authenticated;
+revoke execute on function public.create_booking(uuid, date, date, text, integer, text[], text, text, text, text, text, text, text) from public, anon;
+grant  execute on function public.create_booking(uuid, date, date, text, integer, text[], text, text, text, text, text, text, text) to authenticated;
 revoke execute on function public.cancel_unpaid_booking(uuid) from public, anon;
 grant  execute on function public.cancel_unpaid_booking(uuid) to authenticated;
 revoke execute on function public.admin_save_offer(jsonb) from public, anon;
@@ -469,7 +561,21 @@ declare
   v_amount text := to_char(b.amount_thb, 'FM999G999G999') || ' THB';
   v_url text := public._mpk_site() || '/reservations/' || b.id;
   v_name text := coalesce(nullif(split_part(b.contact_name, ' ', 1), ''), '');
+  v_dlv text := '';
 begin
+  if b.delivery = 'airport' then
+    v_dlv := E'\n✈️ ' || case l
+      when 'fr' then 'Remis à ton arrivée à l''aéroport de Phuket · vol '
+      when 'ru' then 'Встреча в аэропорту Пхукета · рейс '
+      when 'th' then 'ส่งมอบที่สนามบินภูเก็ตเมื่อคุณมาถึง · เที่ยวบิน '
+      else 'Handed over on arrival at Phuket Airport · flight ' end || b.flight_number;
+  elsif b.delivery = 'address' then
+    v_dlv := E'\n📍 ' || case l
+      when 'fr' then 'Livré à : '
+      when 'ru' then 'Доставка: '
+      when 'th' then 'จัดส่งที่: '
+      else 'Delivered to: ' end || b.delivery_address;
+  end if;
   if p_kind = 'receipt' then
     subject := case l
       when 'fr' then '✅ Paiement reçu · ' || b.offer_title || ' (' || b.ref || ')'
@@ -477,10 +583,10 @@ begin
       when 'th' then '✅ ได้รับการชำระเงินแล้ว · ' || b.offer_title || ' (' || b.ref || ')'
       else '✅ Payment received · ' || b.offer_title || ' (' || b.ref || ')' end;
     body := case l
-      when 'fr' then 'Bonjour ' || v_name || E',\n\nMerci ! Ton paiement de ' || v_amount || ' est bien reçu pour « ' || b.offer_title || E' ».\n\n📅 ' || v_when || E'\n🔖 Référence : ' || b.ref || E'\n\nNotre conciergerie confirme maintenant avec le prestataire et te contacte sur le ' || b.contact_phone || E' si besoin.\nSuivi de ta réservation :\n' || v_url
-      when 'ru' then 'Здравствуйте, ' || v_name || E'!\n\nСпасибо! Оплата ' || v_amount || ' за «' || b.offer_title || E'» получена.\n\n📅 ' || v_when || E'\n🔖 Номер: ' || b.ref || E'\n\nНаш консьерж подтвердит детали с исполнителем и при необходимости свяжется с вами по номеру ' || b.contact_phone || E'.\nВаше бронирование:\n' || v_url
-      when 'th' then 'สวัสดี ' || v_name || E'\n\nขอบคุณ! เราได้รับการชำระเงิน ' || v_amount || ' สำหรับ "' || b.offer_title || E'" แล้ว\n\n📅 ' || v_when || E'\n🔖 หมายเลขการจอง: ' || b.ref || E'\n\nทีมคอนเซียร์จจะยืนยันกับผู้ให้บริการ และจะติดต่อคุณที่ ' || b.contact_phone || E' หากจำเป็น\nติดตามการจอง:\n' || v_url
-      else 'Hi ' || v_name || E',\n\nThank you! Your payment of ' || v_amount || ' for "' || b.offer_title || E'" has been received.\n\n📅 ' || v_when || E'\n🔖 Reference: ' || b.ref || E'\n\nOur concierge is now confirming with the provider and will contact you on ' || b.contact_phone || E' if needed.\nTrack your booking:\n' || v_url end;
+      when 'fr' then 'Bonjour ' || v_name || E',\n\nMerci ! Ton paiement de ' || v_amount || ' est bien reçu pour « ' || b.offer_title || E' ».\n\n📅 ' || v_when || v_dlv || E'\n🔖 Référence : ' || b.ref || E'\n\nNotre conciergerie confirme maintenant avec le prestataire et te contacte sur le ' || b.contact_phone || E' si besoin.\nSuivi de ta réservation :\n' || v_url
+      when 'ru' then 'Здравствуйте, ' || v_name || E'!\n\nСпасибо! Оплата ' || v_amount || ' за «' || b.offer_title || E'» получена.\n\n📅 ' || v_when || v_dlv || E'\n🔖 Номер: ' || b.ref || E'\n\nНаш консьерж подтвердит детали с исполнителем и при необходимости свяжется с вами по номеру ' || b.contact_phone || E'.\nВаше бронирование:\n' || v_url
+      when 'th' then 'สวัสดี ' || v_name || E'\n\nขอบคุณ! เราได้รับการชำระเงิน ' || v_amount || ' สำหรับ "' || b.offer_title || E'" แล้ว\n\n📅 ' || v_when || v_dlv || E'\n🔖 หมายเลขการจอง: ' || b.ref || E'\n\nทีมคอนเซียร์จจะยืนยันกับผู้ให้บริการ และจะติดต่อคุณที่ ' || b.contact_phone || E' หากจำเป็น\nติดตามการจอง:\n' || v_url
+      else 'Hi ' || v_name || E',\n\nThank you! Your payment of ' || v_amount || ' for "' || b.offer_title || E'" has been received.\n\n📅 ' || v_when || v_dlv || E'\n🔖 Reference: ' || b.ref || E'\n\nOur concierge is now confirming with the provider and will contact you on ' || b.contact_phone || E' if needed.\nTrack your booking:\n' || v_url end;
   elsif p_kind = 'confirmed' then
     subject := case l
       when 'fr' then '🔑 Réservation confirmée · ' || b.offer_title
@@ -488,10 +594,10 @@ begin
       when 'th' then '🔑 ยืนยันการจองแล้ว · ' || b.offer_title
       else '🔑 Booking confirmed · ' || b.offer_title end;
     body := case l
-      when 'fr' then 'Bonjour ' || v_name || E',\n\nC''est confirmé avec le prestataire : « ' || b.offer_title || E' ».\n\n📅 ' || v_when || E'\n🔖 ' || b.ref || E'\n\nTous les détails :\n' || v_url
-      when 'ru' then 'Здравствуйте, ' || v_name || E'!\n\nИсполнитель подтвердил: «' || b.offer_title || E'».\n\n📅 ' || v_when || E'\n🔖 ' || b.ref || E'\n\nВсе детали:\n' || v_url
-      when 'th' then 'สวัสดี ' || v_name || E'\n\nผู้ให้บริการยืนยันแล้ว: "' || b.offer_title || E'"\n\n📅 ' || v_when || E'\n🔖 ' || b.ref || E'\n\nรายละเอียดทั้งหมด:\n' || v_url
-      else 'Hi ' || v_name || E',\n\nIt''s confirmed with the provider: "' || b.offer_title || E'".\n\n📅 ' || v_when || E'\n🔖 ' || b.ref || E'\n\nAll the details:\n' || v_url end;
+      when 'fr' then 'Bonjour ' || v_name || E',\n\nC''est confirmé avec le prestataire : « ' || b.offer_title || E' ».\n\n📅 ' || v_when || v_dlv || E'\n🔖 ' || b.ref || E'\n\nTous les détails :\n' || v_url
+      when 'ru' then 'Здравствуйте, ' || v_name || E'!\n\nИсполнитель подтвердил: «' || b.offer_title || E'».\n\n📅 ' || v_when || v_dlv || E'\n🔖 ' || b.ref || E'\n\nВсе детали:\n' || v_url
+      when 'th' then 'สวัสดี ' || v_name || E'\n\nผู้ให้บริการยืนยันแล้ว: "' || b.offer_title || E'"\n\n📅 ' || v_when || v_dlv || E'\n🔖 ' || b.ref || E'\n\nรายละเอียดทั้งหมด:\n' || v_url
+      else 'Hi ' || v_name || E',\n\nIt''s confirmed with the provider: "' || b.offer_title || E'".\n\n📅 ' || v_when || v_dlv || E'\n🔖 ' || b.ref || E'\n\nAll the details:\n' || v_url end;
   elsif p_kind = 'cancelled' then
     subject := case l
       when 'fr' then 'Réservation annulée · ' || b.offer_title || ' (' || b.ref || ')'
@@ -507,7 +613,9 @@ begin
     subject := '💳 Nouvelle réservation payée · ' || b.ref || ' · ' || v_amount;
     body := 'Offre : ' || b.offer_title || E'\nDate : ' || v_when || E'\nQuantité : ' || b.qty
             || E'\nMontant : ' || v_amount || E'\nClient : ' || b.contact_name || ' · ' || b.contact_phone
-            || E'\nPrise en charge : ' || coalesce(nullif(b.pickup, ''), '—') || E'\nNotes : ' || coalesce(nullif(b.notes, ''), '—')
+            || E'\nPrise en charge : ' || coalesce(nullif(b.pickup, ''), '—')
+            || case b.delivery when 'airport' then E'\n✈️ LIVRAISON AÉROPORT · vol ' || b.flight_number
+                               when 'address' then E'\n📍 LIVRAISON : ' || b.delivery_address else '' end || E'\nNotes : ' || coalesce(nullif(b.notes, ''), '—')
             || E'\n\nÀ confirmer avec le prestataire, puis passer en « Confirmée » :\n' || public._mpk_site() || '/admin';
   end if;
   body := body || E'\n\n— My Phuket Key';
@@ -676,3 +784,44 @@ values
   'Phuket', 'Héliport (adresse envoyée après réservation)', '30 minutes', 85000, 'group', 1, 4, '[]',
   'Annulation gratuite jusqu''à 72 h avant. Report gratuit en cas de météo défavorable.', true, 90)
 on conflict (slug) do nothing;
+
+-- ---------------------------------------------------------------------
+-- 9. Programme d'arrivée : le client atterrit, tout est prêt
+--    (accueil et transfert, bagages livrés à l'hôtel ou la villa, scooter remis à l'aéroport)
+-- ---------------------------------------------------------------------
+insert into public.offers (slug, category, title, summary, description, highlights, included, not_included, area,
+                           meeting_point, duration_label, price_thb, price_unit, min_qty, max_qty, options,
+                           cancellation, featured, sort, delivery_airport_thb, delivery_address_thb, arrival_covers)
+values
+ ('airport-welcome-private-transfer', 'arrival', 'Accueil VIP à l''aéroport et transfert privé',
+  'Ton chauffeur t''attend à la sortie avec ton nom, eau fraîche et serviette, puis direction ton hôtel ou ta villa.',
+  'Dès la sortie de l''avion, notre équipe suit ton vol en temps réel et t''attend dans le hall des arrivées de l''aéroport de Phuket (HKT), même en cas de retard. Van privé climatisé jusqu''à 9 passagers, sièges enfants sur demande.',
+  array['Suivi du vol en temps réel','Attente gratuite en cas de retard','Van privé jusqu''à 9 passagers'],
+  array['Accueil avec pancarte à ton nom','Transfert privé jusqu''à ton hébergement','Eau fraîche et serviettes'],
+  array['Péages éventuels'],
+  'Aéroport de Phuket (HKT)', 'Hall des arrivées, porte 3', '30 à 75 min selon la plage', 1400, 'group', 1, 9,
+  '[{"id":"fast_track","label":"Fast track à l''immigration","price_thb":2500,"per":"booking"},{"id":"sim","label":"2 cartes SIM 4G touriste (15 jours)","price_thb":700,"per":"booking"},{"id":"child_seat","label":"Siège enfant","price_thb":200,"per":"booking"}]',
+  'Annulation gratuite jusqu''à 24 h avant l''atterrissage.', true, 1, null, null, array['welcome']),
+ ('luggage-delivery-to-your-stay', 'arrival', 'Bagages livrés à ton hôtel ou ta villa',
+  'Pars directement en scooter ou à la plage : on récupère tes bagages à l''aéroport et on les dépose à ton hébergement.',
+  'Tu atterris, tu nous confies tes bagages au hall des arrivées et tu es libre. Nos coursiers les livrent à la réception de ton hôtel ou à ta villa dans les 3 heures. Bagages scellés et assurés.',
+  array['Livraison sous 3 h','Bagages scellés et assurés','Idéal avec un scooter remis à l''aéroport'],
+  array['Prise en charge au hall des arrivées','Livraison à la réception ou à ta villa','Assurance jusqu''à 20 000 THB par bagage'],
+  array['Objets de valeur (à garder sur toi)'],
+  'Aéroport → tout Phuket', 'Hall des arrivées de l''aéroport (HKT)', 'Livraison sous 3 h', 250, 'item', 1, 20,
+  '[{"id":"oversize","label":"Bagage hors format (surf, golf, poussette)","price_thb":300,"per":"booking"}]',
+  'Annulation gratuite jusqu''à 12 h avant l''atterrissage.', true, 2, null, null, array['bags']),
+ ('arrival-pack-ready-on-landing', 'arrival', 'Pack Arrivée clé en main',
+  'Accueil à l''aéroport, scooter remis sur place, bagages livrés à ton hébergement et cartes SIM : tu atterris, tout est prêt.',
+  'Le pack préféré de nos clients. À la sortie de l''avion : accueil avec pancarte, 2 cartes SIM 4G, ton scooter (Honda Click 125, 2 casques, plein fait) remis sur le parking de l''aéroport, et tes bagages livrés à ton hôtel ou ta villa pendant que tu prends la route. Scooter inclus pour la première journée ; prolonge-le ensuite depuis l''app.',
+  array['Scooter remis à l''aéroport','Bagages livrés à ton hébergement','2 cartes SIM 4G incluses'],
+  array['Accueil avec pancarte','Scooter Honda Click 125 + 2 casques (24 h)','Livraison de 2 bagages','2 cartes SIM 4G'],
+  array['Bagage supplémentaire (250 THB)','Carburant'],
+  'Aéroport de Phuket (HKT)', 'Hall des arrivées, porte 3', 'À l''atterrissage', 2900, 'group', 1, 2,
+  '[{"id":"extra_bags","label":"Jusqu''à 3 bagages en plus","price_thb":600,"per":"booking"},{"id":"insurance","label":"Assurance tous risques scooter","price_thb":150,"per":"booking"}]',
+  'Annulation gratuite jusqu''à 24 h avant l''atterrissage.', true, 3, null, null, array['welcome','ride','bags'])
+on conflict (slug) do nothing;
+
+-- Le scooter peut être remis à l'aéroport ou livré à l'adresse du client
+update public.offers set delivery_airport_thb = 300, delivery_address_thb = 0, arrival_covers = array['ride']
+ where slug = 'scooter-honda-click-125' and delivery_airport_thb is null and delivery_address_thb is null;

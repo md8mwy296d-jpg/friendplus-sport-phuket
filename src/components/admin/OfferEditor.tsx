@@ -6,7 +6,7 @@ import { useI18n } from '@/lib/i18n';
 import { useStore, type OfferDraft } from '@/lib/store';
 import { cn } from '@/lib/utils';
 
-const UNITS: PriceUnit[] = ['person', 'group', 'day', 'night', 'hour'];
+const UNITS: PriceUnit[] = ['person', 'group', 'day', 'night', 'hour', 'item'];
 
 const lines = (s: string) => s.split('\n').map((l) => l.trim()).filter(Boolean);
 const slugify = (s: string) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
@@ -25,6 +25,8 @@ function parseOptions(text: string): OfferOption[] {
     return [{ id, label, price_thb: value, per: per.toLowerCase().startsWith('u') ? 'unit' : 'booking' } as OfferOption];
   });
 }
+/** Empty = delivery not offered; otherwise a fee in THB (0 = free). */
+const fee = (v: string) => (v.trim() === '' ? null : Math.max(0, Math.round(Number(v.replace(/[^\d]/g, '')) || 0)));
 const optionsText = (opts: OfferOption[]) => opts.map((o) => `${o.label} | ${o.price_thb} | ${o.per}`).join('\n');
 
 function toDraft(o: Offer | null): OfferDraft {
@@ -53,6 +55,9 @@ function toDraft(o: Offer | null): OfferDraft {
     featured: o?.featured ?? false,
     active: o?.active ?? true,
     sort: o?.sort ?? 100,
+    delivery_airport_thb: o?.deliveryAirportThb ?? null,
+    delivery_address_thb: o?.deliveryAddressThb ?? null,
+    arrival_covers: o?.arrivalCovers ?? [],
   };
 }
 
@@ -65,6 +70,8 @@ export default function OfferEditor({ offer, onDone }: { offer: Offer | null; on
     included: d.included.join('\n'),
     not_included: d.not_included.join('\n'),
     options: optionsText(d.options),
+    delivery_airport_thb: d.delivery_airport_thb === null ? '' : String(d.delivery_airport_thb),
+    delivery_address_thb: d.delivery_address_thb === null ? '' : String(d.delivery_address_thb),
   });
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -93,6 +100,8 @@ export default function OfferEditor({ offer, onDone }: { offer: Offer | null; on
       included: lines(texts.included),
       not_included: lines(texts.not_included),
       options: parseOptions(texts.options),
+      delivery_airport_thb: fee(texts.delivery_airport_thb),
+      delivery_address_thb: fee(texts.delivery_address_thb),
     };
     const id = await adminSaveOffer(draft);
     setBusy(false);
@@ -166,6 +175,39 @@ export default function OfferEditor({ offer, onDone }: { offer: Offer | null; on
           {field('sort', t('admin.offer.sort'), { type: 'number' })}
         </div>
         {area('options', t('admin.offer.options'), 3)}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {(['delivery_airport_thb', 'delivery_address_thb'] as const).map((k) => (
+            <label key={k} className="block">
+              <span className={labelCls}>{t(`admin.offer.${k === 'delivery_airport_thb' ? 'deliveryAirport' : 'deliveryAddress'}`)}</span>
+              <input
+                value={texts[k]}
+                onChange={(e) => setTexts({ ...texts, [k]: e.target.value })}
+                inputMode="numeric"
+                placeholder="—"
+                className={inputCls}
+              />
+            </label>
+          ))}
+        </div>
+        <p className="-mt-2 text-[11px] text-ink/45">{t('admin.offer.deliveryHint')}</p>
+        <div>
+          <span className={labelCls}>{t('admin.offer.covers')}</span>
+          <div className="mt-2 flex flex-wrap gap-4">
+            {(['welcome', 'ride', 'bags'] as const).map((need) => (
+              <label key={need} className="inline-flex items-center gap-2 text-sm font-medium text-ink">
+                <input
+                  type="checkbox"
+                  checked={d.arrival_covers.includes(need)}
+                  onChange={(e) => set('arrival_covers', e.target.checked
+                    ? [...d.arrival_covers, need]
+                    : d.arrival_covers.filter((x) => x !== need))}
+                  className="h-4 w-4 accent-[#0E8C7F]"
+                />
+                {t(`arrival.need.${need}`)}
+              </label>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-4 rounded-[20px] border border-sand-dark bg-white p-5">

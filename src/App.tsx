@@ -7,6 +7,7 @@ import { countVisit } from './lib/visits'
 
 // L'accueil reste dans le bundle principal ; les autres pages sont chargées à la demande.
 const Explore = lazy(() => import('./pages/Explore'))
+const Arrival = lazy(() => import('./pages/Arrival'))
 const OfferPage = lazy(() => import('./pages/OfferPage'))
 const Checkout = lazy(() => import('./pages/Checkout'))
 const Bookings = lazy(() => import('./pages/Bookings'))
@@ -25,6 +26,7 @@ export default function App() {
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="explorer" element={<Explore />} />
+        <Route path="mon-arrivee" element={<Arrival />} />
         <Route path="offre/:slug" element={<OfferPage />} />
         <Route path="reserver/:slug" element={<RequireAuth><Checkout /></RequireAuth>} />
         <Route path="reservations" element={<RequireAuth><Bookings /></RequireAuth>} />

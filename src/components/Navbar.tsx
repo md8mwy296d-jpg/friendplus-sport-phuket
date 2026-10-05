@@ -12,7 +12,8 @@ export default function Navbar() {
   const { isAuthenticated, isAdmin, profile } = useStore();
   const { pathname } = useLocation();
   const [scrolled, setScrolled] = useState(false);
-  const dark = pathname === '/' && !scrolled;
+  // pages whose dark hero sits under the transparent bar
+  const dark = (pathname === '/' || pathname === '/mon-arrivee') && !scrolled;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -22,6 +23,7 @@ export default function Navbar() {
   }, []);
 
   const links = [
+    { to: '/mon-arrivee', key: 'nav.arrival' },
     { to: '/explorer', key: 'nav.explore' },
     { to: '/reservations', key: 'nav.bookings' },
     ...(isAdmin ? [{ to: '/admin', key: 'nav.admin' }] : []),

@@ -86,6 +86,11 @@ Variables d'environnement (Settings → Environment Variables), puis **Redeploy*
 - **Offres** : créer, modifier, masquer, mettre en avant ; photos (5 Mo max, JPEG/PNG/WebP) ;
   options au format `Libellé | prix | unit` (multiplié comme le prix) ou `| booking` (une fois par réservation).
   **Remplacer les 9 offres d'exemple** par tes vraies offres et tes vrais prix avant le lancement.
+- **Programme d'arrivée** (page `/mon-arrivee`) : le client enregistre son vol et son hébergement ; ses
+  réservations sont préremplies et s'affichent jour par jour. Dans chaque offre : « Remise à l'aéroport » et
+  « Livraison à l'adresse » (vide = non proposé, 0 = offert) et « Règle pour l'arrivée » (accueil, véhicule,
+  bagages) pour la checklist d'atterrissage. Dans la liste des réservations, l'admin voit le vol, la livraison
+  et l'hébergement du client.
 - **Visites et sécurité** : visites par ville, journal des connexions, IP bloquées.
 
 ## 6. Avant d'ouvrir au public

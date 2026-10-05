@@ -9,7 +9,7 @@ import Rating from '@/components/offer/Rating';
 import PriceTag from '@/components/offer/PriceTag';
 import OfferCard from '@/components/offer/OfferCard';
 import BookingWidget from '@/components/offer/BookingWidget';
-import { choiceToSearch, type BookingChoice } from '@/lib/booking';
+import { choiceFromTrip, choiceToSearch, type BookingChoice } from '@/lib/booking';
 
 function List({ items, icon: Icon, tone }: { items: string[]; icon: typeof Check; tone: string }) {
   return (
@@ -26,7 +26,7 @@ function List({ items, icon: Icon, tone }: { items: string[]; icon: typeof Check
 export default function OfferPage() {
   const { slug = '' } = useParams();
   const { t } = useI18n();
-  const { getOffer, offers, offersReady } = useStore();
+  const { getOffer, offers, offersReady, trip } = useStore();
   const navigate = useNavigate();
   const widgetRef = useRef<HTMLDivElement>(null);
   const offer = getOffer(slug);
@@ -136,7 +136,7 @@ export default function OfferPage() {
         </div>
 
         <aside ref={widgetRef} className="lg:sticky lg:top-[88px] lg:self-start" id="reserver">
-          <BookingWidget offer={offer} onContinue={goCheckout} />
+          <BookingWidget key={trip?.arrivalDate ?? ''} offer={offer} onContinue={goCheckout} initial={choiceFromTrip(offer, trip)} />
         </aside>
       </div>
 

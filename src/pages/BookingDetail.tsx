@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle2, Info, Loader2, MessageCircle } from 'lucide-re
 import { contactHref } from '@/lib/config';
 import { useI18n } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
-import { useBookingDate } from '@/lib/booking';
+import { useBookingDate, useDeliveryText } from '@/lib/booking';
 import OfferMedia from '@/components/offer/OfferMedia';
 import StatusPill from '@/components/offer/StatusPill';
 
@@ -16,6 +16,7 @@ export default function BookingDetail() {
   const { t, formatTHB } = useI18n();
   const { bookings, offers, refreshBookings, payBooking, cancelUnpaidBooking } = useStore();
   const when = useBookingDate();
+  const deliveryText = useDeliveryText();
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const b = bookings.find((x) => x.id === id);
@@ -62,6 +63,7 @@ export default function BookingDetail() {
     [t('detail.qty'), String(b.qty)],
     ...(b.options.length ? [[t('detail.options'), b.options.map((o) => o.label).join(', ')] as [string, string]] : []),
     [t('detail.contact'), `${b.contactName} · ${b.contactPhone}`],
+    ...(b.delivery !== 'none' ? [[t('detail.delivery'), deliveryText(b)] as [string, string]] : []),
     ...(b.pickup ? [[t('detail.pickup'), b.pickup] as [string, string]] : []),
     ...(b.notes ? [[t('detail.notes'), b.notes] as [string, string]] : []),
   ];

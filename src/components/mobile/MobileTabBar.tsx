@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router';
-import { CalendarCheck, Compass, House, LayoutDashboard, UserRound } from 'lucide-react';
+import { CalendarCheck, Compass, House, LayoutDashboard, PlaneLanding, UserRound } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
@@ -10,6 +10,7 @@ export default function MobileTabBar() {
   const { isAdmin } = useStore();
   const tabs = [
     { to: '/', key: 'nav.home', icon: House, end: true },
+    { to: '/mon-arrivee', key: 'nav.arrival', icon: PlaneLanding },
     { to: '/explorer', key: 'nav.explore', icon: Compass },
     { to: '/reservations', key: 'nav.bookings', icon: CalendarCheck },
     ...(isAdmin ? [{ to: '/admin', key: 'nav.admin', icon: LayoutDashboard }] : []),

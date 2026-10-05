@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router';
 import { MessageCircle, Plus } from 'lucide-react';
-import type { Booking, BookingStatus, Offer } from '@/lib/types';
-import { useBookingDate } from '@/lib/booking';
+import type { Booking, BookingStatus, Offer, Trip } from '@/lib/types';
+import { useBookingDate, useDeliveryText } from '@/lib/booking';
 import { useI18n } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
@@ -34,6 +34,13 @@ function BookingRow({ b, onChanged }: { b: Booking; onChanged: () => void }) {
   const { t, formatTHB } = useI18n();
   const { adminSetBookingStatus } = useStore();
   const when = useBookingDate();
+  const deliveryText = useDeliveryText();
+  const tripText = (trip: Trip | null | undefined) => (trip ? [
+    trip.arrivalDate && `✈️ ${trip.arrivalDate}${trip.arrivalTime ? ` ${trip.arrivalTime}` : ''}${trip.flightNumber ? ` · ${trip.flightNumber}` : ''}`,
+    [trip.stayName, trip.stayAddress].filter(Boolean).join(', '),
+    t('trip.summaryPeople', { travelers: trip.travelers, bags: trip.bags }),
+    trip.departureDate && `🛫 ${trip.departureDate}`,
+  ].filter(Boolean).join(' · ') : '—');
   const [open, setOpen] = useState(b.status === 'paid');
   const [note, setNote] = useState(b.adminNote);
   const [busy, setBusy] = useState(false);
@@ -64,7 +71,9 @@ function BookingRow({ b, onChanged }: { b: Booking; onChanged: () => void }) {
             {[
               ['E-mail', b.email ?? '—'],
               [t('detail.contact'), b.contactPhone],
+              [t('detail.delivery'), deliveryText(b) || '—'],
               [t('detail.pickup'), b.pickup || '—'],
+              [t('trip.title'), tripText(b.trip)],
               [t('detail.options'), b.options.map((o) => o.label).join(', ') || '—'],
               [t('detail.notes'), b.notes || '—'],
             ].map(([k, v]) => (

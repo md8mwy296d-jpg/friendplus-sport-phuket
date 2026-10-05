@@ -1,7 +1,8 @@
 import {
-  Baby, BedDouble, Helicopter, Martini, Motorbike, Sailboat, Sparkles, TreePalm, WashingMachine, type LucideIcon,
+  Baby, BedDouble, Helicopter, Martini, Motorbike, PlaneLanding, Sailboat, Sparkles, TreePalm, WashingMachine,
+  type LucideIcon,
 } from 'lucide-react';
-import type { CategoryId, Offer, OfferOption, PriceUnit } from './types';
+import type { CategoryId, DeliveryMode, Offer, OfferOption, PriceUnit } from './types';
 
 export interface Category {
   id: CategoryId;
@@ -11,8 +12,9 @@ export interface Category {
   to: string;
 }
 
-/** The 9 services, in display order. Labels come from i18n: `cat.<id>` and `cat.<id>.tagline`. */
+/** The services, in display order (arrival concierge first). Labels come from i18n: `cat.<id>` and `cat.<id>.tagline`. */
 export const CATEGORIES: Category[] = [
+  { id: 'arrival', icon: PlaneLanding, from: '#0E8C7F', to: '#FFB547' },
   { id: 'scooter', icon: Motorbike, from: '#FF6B4A', to: '#FFB547' },
   { id: 'excursion', icon: TreePalm, from: '#0E8C7F', to: '#2FBFA5' },
   { id: 'boat', icon: Sailboat, from: '#1F6FB2', to: '#2FBFA5' },
@@ -54,6 +56,7 @@ export function estimateAmount(offer: Pick<Offer, 'priceThb' | 'priceUnit' | 'op
     day: units * qty,
     night: units,
     hour: qty,
+    item: qty,
   }[offer.priceUnit];
   let total = offer.priceThb * mult;
   for (const opt of offer.options as OfferOption[]) {
@@ -61,6 +64,20 @@ export function estimateAmount(offer: Pick<Offer, 'priceThb' | 'priceUnit' | 'op
   }
   return total;
 }
+
+/** Delivery fee for a mode, or null when the offer doesn't deliver that way (mirrors create_booking). */
+export function deliveryFee(offer: Pick<Offer, 'deliveryAirportThb' | 'deliveryAddressThb'>, mode: DeliveryMode): number | null {
+  if (mode === 'airport') return offer.deliveryAirportThb;
+  if (mode === 'address') return offer.deliveryAddressThb;
+  return 0;
+}
+
+export const offersDelivery = (offer: Pick<Offer, 'deliveryAirportThb' | 'deliveryAddressThb'>) =>
+  offer.deliveryAirportThb !== null || offer.deliveryAddressThb !== null;
+
+/** Flight number as stored by the server: upper case, no spaces (e.g. "TG201"). */
+export const normalizeFlight = (v: string) => v.replace(/\s/g, '').toUpperCase();
+export const isFlightNumber = (v: string) => /^[A-Z0-9]{3,8}$/.test(normalizeFlight(v));
 
 /** Today in Phuket (UTC+7) as YYYY-MM-DD, so date pickers don't offer "yesterday" late at night. */
 export function todayInPhuket(): string {

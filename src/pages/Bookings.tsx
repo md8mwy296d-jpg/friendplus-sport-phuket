@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, PlaneLanding } from 'lucide-react';
 import type { Booking } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
@@ -24,6 +24,14 @@ export default function Bookings() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
       <h1 className="font-display text-3xl font-bold text-ink">{t('bookings.title')}</h1>
+      <Link
+        to="/mon-arrivee"
+        className="mt-4 flex items-center gap-3 rounded-[18px] bg-lagoon-deep p-4 text-white shadow-paper"
+      >
+        <PlaneLanding className="h-5 w-5 shrink-0 text-amber" />
+        <span className="min-w-0 flex-1 text-sm font-semibold">{t('bookings.programme')}</span>
+        <ChevronRight className="h-5 w-5 shrink-0 text-white/60" />
+      </Link>
       {sorted.length === 0 ? (
         <div className="mt-10 rounded-[24px] border border-sand-dark bg-white p-10 text-center shadow-paper">
           <p className="font-display text-xl font-semibold text-ink">{t('bookings.empty.title')}</p>

@@ -1,8 +1,10 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
-import { ArrowLeft, Loader2, Lock } from 'lucide-react';
+import { ArrowLeft, Hotel, Loader2, Lock, PlaneLanding } from 'lucide-react';
 import { choiceFromSearch } from '@/lib/booking';
-import { daysBetween, estimateAmount, todayInPhuket, usesDateRange } from '@/lib/catalog';
+import {
+  daysBetween, deliveryFee, estimateAmount, isFlightNumber, normalizeFlight, todayInPhuket, usesDateRange,
+} from '@/lib/catalog';
 import { useI18n } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
 import OfferMedia from '@/components/offer/OfferMedia';
@@ -12,7 +14,7 @@ export default function Checkout() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { t, formatTHB, formatDate } = useI18n();
-  const { getOffer, offersReady, profile, createBooking, payBooking } = useStore();
+  const { getOffer, offersReady, profile, trip, createBooking, payBooking } = useStore();
   const offer = getOffer(slug);
   const choice = useMemo(() => choiceFromSearch(params), [params]);
 
@@ -20,6 +22,11 @@ export default function Checkout() {
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [pickup, setPickup] = useState('');
   const [notes, setNotes] = useState('');
+  const [flight, setFlight] = useState(trip?.flightNumber ?? '');
+  const [landing, setLanding] = useState(trip?.arrivalTime || choice.time || '');
+  const [address, setAddress] = useState(
+    trip ? [trip.stayName, trip.stayAddress].map((x) => x.trim()).filter(Boolean).join(', ') : '',
+  );
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -36,26 +43,33 @@ export default function Checkout() {
   const optionIds = (choice.optionIds ?? []).filter((id) => offer.options.some((o) => o.id === id));
   const chosen = offer.options.filter((o) => optionIds.includes(o.id));
   const dateOk = Boolean(start) && start >= todayInPhuket() && (!range || units >= 1);
-  const total = estimateAmount(offer, qty, Math.max(units, 1), optionIds);
+  const delivery = choice.delivery && deliveryFee(offer, choice.delivery) !== null ? choice.delivery : 'none';
+  const fee = deliveryFee(offer, delivery) ?? 0;
+  const total = estimateAmount(offer, qty, Math.max(units, 1), optionIds) + fee;
   const fmtDay = (d: string) => formatDate(`${d}T12:00:00`, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!dateOk) { setError(t('checkout.errDate')); return; }
     if (name.trim().length < 2 || phone.replace(/\D/g, '').length < 6) { setError(t('checkout.errContact')); return; }
+    if (delivery === 'airport' && !isFlightNumber(flight)) { setError(t('checkout.errFlight')); return; }
+    if (delivery === 'address' && address.trim().length < 5) { setError(t('checkout.errAddress')); return; }
     setError('');
     setBusy(true);
     const id = await createBooking({
       offerId: offer.id,
       startDate: start,
       endDate: end,
-      startTime: range ? '' : choice.time ?? '',
+      startTime: delivery === 'airport' ? landing : range ? '' : choice.time ?? '',
       qty,
       optionIds,
       contactName: name,
       contactPhone: phone,
-      pickup,
+      pickup: delivery === 'none' ? pickup : '',
       notes,
+      delivery,
+      deliveryAddress: delivery === 'address' ? address : '',
+      flightNumber: delivery === 'airport' ? normalizeFlight(flight) : trip?.flightNumber ?? '',
     });
     if (!id) { setBusy(false); return; }
     const redirected = await payBooking(id);
@@ -89,10 +103,42 @@ export default function Checkout() {
               />
               <span className="mt-1 block text-xs text-ink/45">{t('checkout.phoneHint')}</span>
             </label>
-            <label className="block">
-              <span className={labelCls}>{t('checkout.pickup')}</span>
-              <input value={pickup} onChange={(e) => setPickup(e.target.value)} maxLength={300} placeholder={t('checkout.pickupPh')} className={inputCls} />
-            </label>
+            {delivery === 'airport' && (
+              <div className="rounded-2xl border border-lagoon/30 bg-lagoon/5 p-4">
+                <p className="flex items-center gap-2 text-sm font-bold text-lagoon-deep">
+                  <PlaneLanding className="h-4 w-4" /> {t('checkout.airportTitle')}
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <label className="block">
+                    <span className={labelCls}>{t('trip.flight')}</span>
+                    <input
+                      value={flight} onChange={(e) => setFlight(e.target.value.toUpperCase())} maxLength={10} required
+                      placeholder="TG201" autoCapitalize="characters" className={inputCls}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className={labelCls}>{t('trip.arrivalTime')}</span>
+                    <input type="time" value={landing} onChange={(e) => setLanding(e.target.value)} className={inputCls} />
+                  </label>
+                </div>
+                <p className="mt-2 text-xs text-ink/55">{t('checkout.airportHint')}</p>
+              </div>
+            )}
+            {delivery === 'address' && (
+              <label className="block">
+                <span className={labelCls}>{t('checkout.deliveryAddress')}</span>
+                <input
+                  value={address} onChange={(e) => setAddress(e.target.value)} maxLength={300} required
+                  placeholder={t('checkout.pickupPh')} className={inputCls}
+                />
+              </label>
+            )}
+            {delivery === 'none' && (
+              <label className="block">
+                <span className={labelCls}>{t('checkout.pickup')}</span>
+                <input value={pickup} onChange={(e) => setPickup(e.target.value)} maxLength={300} placeholder={t('checkout.pickupPh')} className={inputCls} />
+              </label>
+            )}
             <label className="block">
               <span className={labelCls}>{t('checkout.notes')}</span>
               <textarea
@@ -123,6 +169,15 @@ export default function Checkout() {
                   <dt className="text-ink/55">{t(`book.qty.${offer.priceUnit}`)}</dt>
                   <dd className="font-medium text-ink">{qty}</dd>
                 </div>
+                {delivery !== 'none' && (
+                  <div className="flex justify-between gap-3">
+                    <dt className="flex items-center gap-1.5 text-ink/55">
+                      {delivery === 'airport' ? <PlaneLanding className="h-3.5 w-3.5" /> : <Hotel className="h-3.5 w-3.5" />}
+                      {t(`book.delivery.${delivery}`)}
+                    </dt>
+                    <dd className="font-medium text-ink">{fee ? formatTHB(fee) : t('book.free')}</dd>
+                  </div>
+                )}
                 {chosen.map((o) => (
                   <div key={o.id} className="flex justify-between gap-3">
                     <dt className="text-ink/55">+ {o.label}</dt>
