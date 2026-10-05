@@ -1,0 +1,7 @@
+# Réglages des fonctions Edge (utilisés par la CLI Supabase et le déploiement)
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.stripe-webhook]
+# Stripe n'envoie pas de jeton Supabase : la signature Stripe est vérifiée dans le code
+verify_jwt = false

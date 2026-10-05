@@ -1,28 +1,20 @@
-# FRIEND+ Sport Phuket
+# My Phuket Key
 
-Application web pour organiser des sports collectifs à Phuket (futsal 5v5, padel, danse, fitness).
-Une session est **confirmée automatiquement 24 ou 48 h avant** si le quota de joueurs est atteint, sinon elle est annulée.
+Conciergerie en ligne à Phuket : scooters et motos, excursions avec assurance, bateaux et voiliers,
+hôtels et villas, clubs, nounou, ménage et laverie, taxi beauté, hélicoptère.
+Réservation et **paiement par carte** (Stripe) ; la réservation est confirmée une fois la carte débitée.
 
-- Front : React 19, TypeScript, Vite, Tailwind, 4 langues (FR, EN, RU, TH)
-- Back : Supabase (base Postgres, connexion par e-mail, temps réel, tâche planifiée)
-- Hébergement : Vercel
+- Front : React 19, TypeScript, Vite, Tailwind, application mobile installable (PWA), 23 langues
+- Back : Supabase (Postgres + RLS, connexion par code e-mail, stockage photos, fonctions Edge, tâches planifiées)
+- Paiement : Stripe Checkout · E-mails : Resend · Hébergement : Vercel
 
-➡️ **Mise en ligne pas à pas : voir [DEPLOIEMENT.md](./DEPLOIEMENT.md)**
+➡️ **Mise en ligne et gestion : [DEPLOIEMENT.md](./DEPLOIEMENT.md)** · Historique : [HISTORIQUE-PROJET.md](./HISTORIQUE-PROJET.md)
 
 ## Lancer en local
 
 ```bash
 npm install
-cp .env.example .env      # puis colle l'URL et la clé "anon" de ton projet Supabase
+cp .env.example .env      # URL et clé « anon » du projet Supabase
 npm run dev               # http://localhost:3000
+npm run typecheck && npm run lint && npm run build
 ```
-
-## Où est quoi
-
-| Dossier / fichier | Rôle |
-|---|---|
-| `supabase/schema.sql` | Toute la base : tables, sécurité, règles métier (quota, liste d'attente, confirmation 24–48 h) |
-| `src/lib/store.ts` | Lien entre l'interface et Supabase (chargement, temps réel, actions) |
-| `src/lib/i18n.ts`, `src/lib/i18n-auth.ts` | Textes dans les 4 langues |
-| `src/pages/` | Écrans : Explorer, Créer, Détail, Mes sessions, Salles, Profil, Connexion, Bienvenue |
-| `public/` | Images (salles, sports, hero) |

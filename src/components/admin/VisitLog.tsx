@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { ListOrdered } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
-import { useClub } from '@/lib/club';
 import { useStore } from '@/lib/store';
 import { flagOf, useVisitLog } from '@/lib/visits';
 import { blockIp, unblockIp } from '@/lib/moderation';
@@ -11,7 +10,7 @@ const PAGE = 30;
 /** Admins only (on their profile): latest connections with IP, city and device (kept 30 days). */
 export default function VisitLog() {
   const { t, formatDate } = useI18n();
-  const { isAppAdmin } = useClub();
+  const { isAdmin: isAppAdmin } = useStore();
   const { pushToast } = useStore();
   const { rows, reload } = useVisitLog(isAppAdmin);
   const [shown, setShown] = useState(PAGE);

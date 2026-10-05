@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { MapPin } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
-import { useClub } from '@/lib/club';
+import { useStore } from '@/lib/store';
 import { flagOf, useVisitStats } from '@/lib/visits';
 import { cn } from '@/lib/utils';
 
@@ -10,7 +10,7 @@ const RANGES = [7, 30, 90];
 /** Admins only: anonymous visit counts per city. */
 export default function VisitsByCity() {
   const { t } = useI18n();
-  const { isAppAdmin } = useClub();
+  const { isAdmin: isAppAdmin } = useStore();
   const [days, setDays] = useState(30);
   const rows = useVisitStats(isAppAdmin, days);
   if (!isAppAdmin) return null;

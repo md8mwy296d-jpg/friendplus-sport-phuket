@@ -1,128 +1,97 @@
-# Mettre FRIEND+ Sport Phuket en ligne
+# My Phuket Key — mise en ligne et gestion
 
-Compte environ **1 h** la première fois. Tout se fait dans le navigateur, sans ligne de commande.
-Les trois services ont une offre gratuite suffisante pour lancer.
+Plateforme de réservation de services à Phuket : scooters et motos, excursions avec assurance,
+bateaux et voiliers, hôtels et villas, conciergerie clubs, nounou, ménage et laverie, taxi beauté,
+hélicoptère. **Une réservation n'est valide qu'une fois la carte débitée** (Stripe).
 
-| Service | Rôle | Offre gratuite |
-|---|---|---|
-| **Supabase** | Base de données, comptes joueurs, temps réel | Oui (2 projets) |
-| **GitHub** | Stocke le code | Oui |
-| **Vercel** | Héberge le site | Oui (usage non commercial ; passer au plan Pro dès que tu monétises) |
-| **Resend** (ou Brevo) | Envoi des e-mails de connexion | Oui (3 000 e-mails/mois) |
+| Service | Rôle |
+|---|---|
+| **Supabase** (projet `fqrlyykadbzaxzjneupm`, Tokyo) | Base de données, comptes clients, fonctions de paiement |
+| **Vercel** (projet `friendplus-sport-phuket`) | Héberge le site |
+| **Stripe** | Paiement par carte (et PromptPay si activé) |
+| **Resend** | E-mails : code de connexion, reçu de paiement, confirmation, alerte admin |
 
 ---
 
-## Étape 1 — Supabase (la base de données)
+## 1. Base de données (Supabase → SQL Editor)
 
-1. Crée un compte sur **supabase.com**, puis **New project**.
-   - Nom : `friendplus`
-   - Région : **Southeast Asia (Singapore)**, la plus proche de Phuket
-   - Note le mot de passe de la base quelque part.
-2. **Database → Extensions** : cherche `pg_cron` et active-le.
-3. **SQL Editor → New query** : colle tout le contenu de `supabase/schema.sql`, puis **Run**.
-   Tu dois voir « Success ». Les tables apparaissent dans **Table Editor**.
-4. **Authentication → Sign In / Providers → Email** : vérifie que c'est activé.
-   Laisse les autres réglages par défaut.
-   Puis, dans une **nouvelle requête**, colle `supabase/club.sql` (Social Club : groupes, messages, photos) et **Run**.
-   Il crée aussi l'espace de stockage privé `chat-images` pour les photos.
-5. **Authentication → Emails → Templates** : les modèles ne sont modifiables qu'**après** avoir branché le SMTP
-   (point 6). Fais donc le point 6 d'abord, puis remplace le contenu de **« Magic link or OTP »** ET de
-   **« Confirm sign up »** (reçu à la toute première connexion) par :
+Dans cet ordre, une requête à la fois :
 
-   ```html
-   <h2>Ton code FRIEND+</h2>
-   <p>Ton code de connexion : <strong style="font-size:24px">{{ .Token }}</strong></p>
-   <p>Ou clique ici : <a href="{{ .ConfirmationURL }}">me connecter</a></p>
-   ```
+1. **`supabase/myphuketkey.sql`** : offres, réservations, paiement, e-mails, photos, 9 offres d'exemple.
+   Ré-exécutable sans risque.
+2. **`supabase/moderation.sql`** et **`supabase/visits.sql`** : déjà en place sur le projet actuel
+   (blocage d'IP, statistiques de visites). À exécuter seulement sur un nouveau projet.
+3. **`supabase/cleanup-friendplus.sql`** : ⚠️ supprime définitivement les tables de l'ancienne version
+   sport (sessions, salles, Club, amis, publications). Les comptes sont conservés.
+   Ensuite, dans **Storage**, vider puis supprimer les buckets `chat-images`, `moments`, `news`, `posts`, `avatars`.
 
-   Sans ça, les joueurs reçoivent seulement un lien et pas le code à 6 chiffres.
-6. **Authentication → Emails → SMTP Settings** : branche Resend (ou Brevo).
-   ⚠️ **Obligatoire avant le lancement** : l'envoi intégré de Supabase est limité à quelques e-mails par heure.
-   Sur Resend : crée une clé API, vérifie ton domaine, puis saisis dans Supabase
-   hôte `smtp.resend.com`, port `465`, utilisateur `resend`, mot de passe = ta clé API.
-7. **Project Settings → API** : copie **Project URL** et la clé **anon public**. Tu en as besoin à l'étape 3.
+**Devenir administrateur** (accès à la page `/admin`) : Authentication → Users → copier ton UID, puis :
 
-## Étape 2 — GitHub (le code)
+```sql
+insert into public.app_admins (user_id) values ('TON-UID') on conflict do nothing;
+```
 
-1. Crée un compte sur **github.com**, puis **New repository** → nom `friendplus-sport-phuket`, **Private**.
-2. Sur la page du dépôt : **uploading an existing file**, glisse **le contenu** du dossier
-   `friendplus-sport-phuket` (pas le dossier lui-même), puis **Commit changes**.
+L'admin reçoit par e-mail une alerte à chaque réservation payée.
 
-## Étape 3 — Vercel (la mise en ligne)
+## 2. Paiement Stripe
 
-1. Crée un compte sur **vercel.com** avec ton GitHub.
-2. **Add New → Project** → choisis `friendplus-sport-phuket`. Vercel détecte Vite tout seul.
-3. Avant de cliquer Deploy, ouvre **Environment Variables** et ajoute :
+1. Crée un compte sur **stripe.com** (entreprise en Thaïlande ou dans ton pays). Reste en **mode test**
+   tant que tout n'est pas vérifié.
+2. **Clé secrète** : Developers → API keys → *Secret key* (`sk_test_…`, puis `sk_live_…`).
+3. **Fonctions Edge** (Supabase → Edge Functions) : déployer `create-checkout` et `stripe-webhook`
+   (dossier `supabase/functions/`). `stripe-webhook` doit être déployée **sans vérification JWT**
+   (`supabase/config.toml` le précise ; en CLI : `supabase functions deploy stripe-webhook --no-verify-jwt`).
+4. **Webhook Stripe** : Developers → Webhooks → *Add endpoint*
+   - URL : `https://fqrlyykadbzaxzjneupm.supabase.co/functions/v1/stripe-webhook`
+   - Événements : `checkout.session.completed` et `checkout.session.async_payment_succeeded`
+   - Copier le *Signing secret* (`whsec_…`).
+5. **Secrets** (Supabase → Edge Functions → Secrets) :
 
    | Nom | Valeur |
    |---|---|
-   | `VITE_SUPABASE_URL` | la Project URL de Supabase |
-   | `VITE_SUPABASE_ANON_KEY` | la clé anon public |
-   | `VITE_ENABLE_GOOGLE` | `false` (voir Étape 6) |
+   | `STRIPE_SECRET_KEY` | `sk_test_…` (puis `sk_live_…` au lancement) |
+   | `STRIPE_WEBHOOK_SECRET` | `whsec_…` |
+   | `SITE_URL` | `https://www.friendplussport.center` (puis le nouveau domaine) |
 
-4. **Deploy**. Au bout de 1 à 2 minutes, tu as une adresse du type `friendplus-sport-phuket.vercel.app`.
-5. Retourne dans Supabase → **Authentication → URL Configuration** :
-   - **Site URL** : ton adresse Vercel (ou ton domaine)
-   - **Redirect URLs** : ajoute `https://TON-ADRESSE/**`
+6. **Test** : réserve une offre et paie avec la carte `4242 4242 4242 4242` (date future, CVC quelconque).
+   La réservation passe « Payée », tu reçois l'alerte admin, le client son reçu.
 
-## Étape 4 — Ton nom de domaine (optionnel)
+Le prix est **toujours recalculé par la base** (`create_booking`) : modifier la page ne change pas le montant débité.
+Seul le webhook signé par Stripe peut marquer une réservation « payée ». Une réservation non payée expire au bout de 2 h.
 
-Vercel → ton projet → **Settings → Domains** → ajoute par exemple `friendplus.app` et suis les instructions DNS.
-Pense à mettre à jour la **Site URL** et les **Redirect URLs** dans Supabase avec le nouveau domaine.
+## 3. Vercel
 
-## Étape 5 — Tester avant d'annoncer
+Variables d'environnement (Settings → Environment Variables), puis **Redeploy** :
 
-Fais le test avec 2 ou 3 téléphones (ou navigateurs en navigation privée) :
+| Nom | Valeur |
+|---|---|
+| `VITE_SUPABASE_URL` | déjà en place |
+| `VITE_SUPABASE_ANON_KEY` | déjà en place |
+| `VITE_CONTACT_EMAIL` | adresse de contact affichée (par défaut contact01friendplussport@gmail.com) |
+| `VITE_CONTACT_WHATSAPP` | numéro WhatsApp de la conciergerie, format international (ex. `66812345678`) — active les boutons WhatsApp |
 
-- [ ] Connexion par e-mail : le code arrive, l'écran « Bienvenue » demande prénom, nationalité et sports
-- [ ] Créer une session **padel** (quota 4) avec le compte A
-- [ ] Rejoindre avec B : le compteur passe à 2/4 **sur l'écran de A sans recharger**
-- [ ] Remplir la session : statut « Complet » ; un 5e joueur part en liste d'attente
-- [ ] Un joueur quitte : le premier de la liste d'attente prend sa place
-- [ ] Inviter un joueur : l'invitation apparaît dans « Mes sessions » chez lui
-- [ ] Deadline passée : la session passe « Confirmée » (quota atteint) ou « Annulée » (dans les 5 min)
+## 4. Nouveau domaine (myphuketkey.com)
 
-## Étape 6 — Connexion Google (optionnel)
+1. Acheter le domaine (Vercel → Domains → Buy), l'ajouter au projet `friendplus-sport-phuket`.
+2. Supabase → Authentication → URL Configuration : Site URL + Redirect URLs avec le nouveau domaine.
+3. Resend : ajouter et vérifier le domaine (Auto configure avec Vercel), puis mettre à jour
+   l'expéditeur dans `_mpk_sender()` et le site dans `_mpk_site()` (fin de `myphuketkey.sql`), et ré-exécuter.
+4. Secret `SITE_URL` des fonctions Edge, `index.html` (balises canonical / og), `public/robots.txt`, `public/sitemap.xml`.
 
-1. Google Cloud Console → crée des identifiants OAuth (type « Application Web »),
-   avec l'URL de redirection indiquée dans Supabase → **Authentication → Providers → Google**.
-2. Colle l'ID client et le secret dans Supabase, active Google.
-3. Dans Vercel, passe `VITE_ENABLE_GOOGLE` à `true`, puis **Redeploy**.
+## 5. Gérer au quotidien (page /admin)
 
----
+- **Réservations** : « À confirmer » = payées. Contacte le prestataire, puis **Confirmer** (le client reçoit
+  un e-mail). Après la prestation : **Terminée**. Annulation : **Annuler**, puis rembourse dans Stripe
+  (Payments → Refund) et passe en **Remboursée**. Bouton WhatsApp pour joindre le client.
+- **Offres** : créer, modifier, masquer, mettre en avant ; photos (5 Mo max, JPEG/PNG/WebP) ;
+  options au format `Libellé | prix | unit` (multiplié comme le prix) ou `| booking` (une fois par réservation).
+  **Remplacer les 9 offres d'exemple** par tes vraies offres et tes vrais prix avant le lancement.
+- **Visites et sécurité** : visites par ville, journal des connexions, IP bloquées.
 
-## Gérer l'app au quotidien
+## 6. Avant d'ouvrir au public
 
-- **Salles partenaires** : Supabase → **Table Editor → venues**. Les 6 salles installées sont celles du prototype
-  (noms fictifs) : **remplace-les par tes vraies salles** avant le lancement. Pour masquer une salle sans la supprimer,
-  mets `active` à `false`. Pour une photo, mets une adresse d'image (https://…) dans `photo`.
-- **Sessions et joueurs** : tables `sessions`, `session_players`, `profiles`.
-- **Supprimer un compte** (demande RGPD/PDPA) : **Authentication → Users → Delete user**. Ses données partent avec.
-- **Devenir modérateur du Social Club** : copie ton identifiant dans **Authentication → Users** (colonne UID), puis
-  SQL Editor : `insert into public.app_admins (user_id) values ('TON-UID');`. Tu peux alors supprimer n'importe quel
-  message et exclure un membre de n'importe quel groupe.
-- **Signalements** : **Table Editor → reports** (message signalé, auteur, motif). Passe `status` à `reviewed` une fois traité.
-
-## Ce que fait cette version 1
-
-- Comptes joueurs (e-mail sans mot de passe, Google en option), profil public sans e-mail visible
-- Sessions partagées entre tous les utilisateurs, compteur mis à jour en direct
-- Quota verrouillé côté serveur (pas de surbooking même si 2 personnes cliquent en même temps)
-- Liste d'attente avec promotion automatique
-- Confirmation ou annulation automatique à la deadline 24/48 h (toutes les 5 min)
-- Invitations entre joueurs, annulation par l'organisateur
-- Chiffres de la page d'accueil calculés en direct
-- **Social Club** : groupes publics ou privés créés par les membres, messages privés, discussion automatique de chaque
-  session (réservée aux inscrits), photos, messages en direct, compteur de non-lus
-- **Modération** : blocage d'un joueur, signalement, suppression de messages, exclusion d'un groupe, limite de 20 messages/minute
-- **Application mobile (PWA)** : installable sur l'écran d'accueil (Android : bouton « Installer » ; iPhone : Partager →
-  « Sur l'écran d'accueil »), plein écran, barre d'onglets en bas, fonctionne hors connexion pour l'interface
-
-## Prochaines étapes conseillées
-
-1. **Notifications** hors de l'app (e-mail, LINE ou WhatsApp) quand une session est confirmée ou annulée.
-   Aujourd'hui, le joueur le voit en ouvrant l'app.
-2. **Mentions légales, CGU et politique de confidentialité** (RGPD si tu vises des Européens, PDPA en Thaïlande).
-3. **Paiement** à l'inscription (Stripe ou Omise, qui gère PromptPay en Thaïlande) pour réduire les absences.
-4. **Notifications push** sur téléphone pour les nouveaux messages du Club (nécessite une fonction serveur Supabase).
-5. **Publication sur l'App Store et Google Play** (Capacitor) une fois la PWA adoptée.
+- [ ] Vraies offres, vrais prix, vraies photos (droits d'utilisation)
+- [ ] Conditions de réservation (`/conditions`) relues par un juriste : raison sociale, adresse, numéro d'entreprise
+- [ ] Nouvelle politique de confidentialité (Termly) : l'actuelle (`public/privacy-policy.html`) décrit encore FRIEND+ Sport
+- [ ] Contrats avec les prestataires (assurance des excursions, licences pour les bateaux et l'hélicoptère, nounous vérifiées)
+- [ ] Stripe en mode live, webhook live, test d'un vrai paiement puis remboursement

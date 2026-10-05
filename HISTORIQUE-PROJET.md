@@ -1,4 +1,71 @@
-# FRIEND+ Sport Phuket — historique et état du projet
+# My Phuket Key (ex-FRIEND+ Sport Phuket) — historique et état du projet
+
+> Fichier de reprise. À ouvrir en premier dans Claude Code (« lis HISTORIQUE-PROJET.md »).
+> Dernière mise à jour : 5 octobre 2026 — **changement de concept**.
+
+---
+
+## 1. Le projet en trois phrases
+
+**My Phuket Key** est une conciergerie en ligne à Phuket, sur le modèle de GetYourGuide : le client choisit
+une offre, une date et des options, **paie par carte**, et la réservation n'est valide qu'une fois le paiement reçu.
+9 services : scooters et motos, excursions avec assurance, bateaux et voiliers (repas, musique), hôtels et villas,
+conciergerie clubs, nounou, ménage et laverie, taxi beauté, hélicoptère.
+L'équipe confirme ensuite avec le prestataire depuis la page `/admin`.
+
+## 2. Pourquoi ce changement (5 octobre 2026)
+
+Le concept FRIEND+ Sport (sessions de sport entre touristes, Club social) n'a pas pris. Décision : tout ce qui
+concerne le sport, le Club, les amis et les publications est supprimé ; on garde la base technique
+(comptes par code e-mail, 23 langues, app mobile installable, modération, statistiques de visites, Supabase, Vercel, Resend).
+L'ancienne version reste consultable dans l'historique git (dernier commit sport sur `main` : `2f3b810`).
+
+## 3. État
+
+| Élément | État |
+|---|---|
+| Code My Phuket Key (offres, réservation, paiement, admin, 4 langues + 19 en anglais) | ✅ Branche `claude/reprise-projet-5kelx0` |
+| Base `supabase/myphuketkey.sql` | ⬜ À exécuter (testée : 45 scénarios OK, migration depuis l'ancienne base OK) |
+| Nettoyage `supabase/cleanup-friendplus.sql` | ⬜ Après validation (irréversible) |
+| Fonctions de paiement `create-checkout`, `stripe-webhook` | ⬜ À déployer + secrets Stripe |
+| Compte Stripe | ⬜ À créer |
+| Nom de domaine `myphuketkey.com` | ⬜ Libre au 5 octobre (≈ 11 $/an), à acheter ; le site reste sur friendplussport.center en attendant |
+| Vraies offres et photos | ⬜ 9 offres d'exemple à remplacer depuis `/admin` |
+| CGV et politique de confidentialité | ⬜ Modèle à faire valider ; Termly à refaire |
+
+Marche à suivre complète : **`DEPLOIEMENT.md`**.
+
+## 4. Architecture
+
+- **Front** : React 19, TypeScript, Vite, Tailwind, framer-motion. PWA (vite-plugin-pwa).
+- **Back** : Supabase (Postgres + RLS, Auth par code e-mail, Storage `offer-photos`, Edge Functions Deno, pg_cron, pg_net).
+- **Paiement** : Stripe Checkout (THB). Le prix est recalculé en base (`create_booking` → `_booking_amount`) ;
+  seul le webhook signé passe une réservation en « paid ». Non payée → expirée après 2 h (pg_cron).
+- **E-mails** (Resend, depuis la base via pg_net) : reçu client, alerte admin, confirmation, annulation.
+- **Sécurité** : profils privés (chacun ne voit que le sien, l'admin voit tout), écritures uniquement via fonctions
+  contrôlées, CSP et en-têtes de sécurité (vercel.json), blocage d'IP (middleware.js).
+
+| Chemin | Rôle |
+|---|---|
+| `supabase/myphuketkey.sql` | Toute la base : comptes, offres, réservations, paiement, e-mails, photos, exemples |
+| `supabase/functions/` | `create-checkout` (page de paiement), `stripe-webhook` (paiement reçu) |
+| `src/lib/store.ts` | Pont interface ↔ Supabase (auth, offres, réservations, admin) |
+| `src/lib/catalog.ts` | Les 9 catégories, estimation du prix (mêmes règles que la base) |
+| `src/lib/i18n-app.ts`, `i18n-base.ts` | Textes FR / EN / RU / TH (les 19 autres langues retombent sur l'anglais) |
+| `src/pages/` | Accueil, Explorer, Offre, Paiement (`/reserver`), Réservations, Compte, Admin, Conditions |
+
+## 5. Prochaines étapes conseillées
+
+1. Stripe + déploiement des fonctions, test complet avec la carte 4242.
+2. Vraies offres (prestataires partenaires, prix, photos), puis lancement.
+3. Nom de domaine myphuketkey.com + e-mails depuis ce domaine.
+4. Traduire les nouveaux textes dans les 19 autres langues (chinois, coréen, hindi en priorité pour Phuket).
+5. Avis clients après la prestation, codes promo, commission prestataires, paiement PromptPay.
+
+---
+
+# Archive — FRIEND+ Sport Phuket (version abandonnée)
+
 
 > Fichier de reprise. À ouvrir en premier dans Claude Code (`claude` puis « lis HISTORIQUE-PROJET.md »).
 > Dernière mise à jour : 23 septembre 2026 (version mobile : compte, photo de profil, débordement d'écran).

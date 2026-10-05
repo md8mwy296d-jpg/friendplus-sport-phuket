@@ -4,14 +4,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Trash2 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useStore } from '@/lib/store';
-import { useClub } from '@/lib/club';
 import { supabase } from '@/lib/supabase';
 
 /** Profile section: permanently delete one's own account (delete_my_account RPC). Hidden for the app admin. */
 export default function DeleteAccount() {
   const { t } = useI18n();
   const { signOut, pushToast } = useStore();
-  const { isAppAdmin } = useClub();
+  const { isAdmin: isAppAdmin } = useStore();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState('');

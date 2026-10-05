@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Share, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 
-const DISMISS_KEY = 'friendplus.installDismissedAt';
+const DISMISS_KEY = 'mpk.installDismissedAt';
 const SNOOZE_MS = 14 * 24 * 3600_000;
 
 interface BeforeInstallPromptEvent extends Event {
@@ -70,7 +70,7 @@ export default function InstallPrompt() {
   };
 
   // never cover a page's own action (join a session, sign in, finish the profile, create, chat)
-  const busyPage = /^\/(session\/|club\/|joueur\/|publication\/|connexion|bienvenue|creer)/.test(pathname);
+  const busyPage = /^\/(reserver\/|connexion|bienvenue|admin)/.test(pathname);
   const show = visible && !busyPage && (Boolean(deferred) || iosHint);
 
   return (

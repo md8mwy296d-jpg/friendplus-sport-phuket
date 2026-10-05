@@ -1,13 +1,12 @@
 import { ShieldAlert } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
-import { useClub } from '@/lib/club';
 import { useStore } from '@/lib/store';
 import { unblockIp, useBlockedIps } from '@/lib/moderation';
 
 /** Admins only (on their profile): every blocked IP address, with an unblock button. */
 export default function BlockedIps() {
   const { t, formatDate } = useI18n();
-  const { isAppAdmin } = useClub();
+  const { isAdmin: isAppAdmin } = useStore();
   const { pushToast } = useStore();
   const { items, reload } = useBlockedIps(isAppAdmin);
   if (!isAppAdmin) return null;
